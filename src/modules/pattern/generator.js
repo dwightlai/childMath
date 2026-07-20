@@ -1,0 +1,137 @@
+// Question generators for the Pattern module.
+import { randInt, pick, shuffle } from '../../utils/helpers'
+
+const SHAPES = ['🔴', '🔵', '🟢', '🟡', '🟣', '🔶']
+const SHAPE_NAMES = { '🔴': '红圆', '🔵': '蓝圆', '🟢': '绿圆', '🟡': '黄圆', '🟣': '紫圆', '🔶': '橙方块' }
+
+// 接龙填空: number sequence, find the next.
+const sequence = (difficulty) => {
+  const kind = difficulty === 1 ? pick(['+1', '+2', '+1']) : pick(['+2', '+3', '+5', '-1', '-2'])
+  const start = randInt(1, 10)
+  const step = kind === '+1' ? 1 : kind === '+2' ? 2 : kind === '+3' ? 3 : kind === '+5' ? 5 : kind === '-1' ? -1 : -2
+  const seq = Array.from({ length: 4 }, (_, i) => start + step * i)
+  const answer = start + step * 4
+  const options = shuffle([answer, answer + 1, answer - 1, answer + 2].filter((v, i, a) => a.indexOf(v) === i).slice(0, 4)).map((v) => ({ value: v }))
+  return {
+    question: '找规律，空格里应该填什么数？',
+    speakText: '找规律，空格里应该填什么数？',
+    hint: `看看后面的数比前面的数多几（或少几）？`,
+    options,
+    isCorrect: (opt) => opt.value === answer,
+    columns: 4,
+    seq: { items: seq, isNumber: true },
+  }
+}
+
+// 找不同: find the odd one out.
+const oddOneOut = (difficulty) => {
+  const type = pick(['category', 'shape'])
+  if (type === 'category') {
+    const sets = [
+      { items: ['🍎', '🍌', '🍇', '🚗'], odd: '🚗', why: '汽车不是水果' },
+      { items: ['🐶', '🐱', '🐰', '🌸'], odd: '🌸', why: '花不是小动物' },
+      { items: ['✏️', '📏', '📚', '🍰'], odd: '🍰', why: '蛋糕不是学习用品' },
+      { items: ['👟', '🧦', '🧤', '🍩'], odd: '🍩', why: '甜甜圈不是穿戴的' },
+      { items: ['⚽', '🏀', '🎾', '🍕'], odd: '🍕', why: '披萨不是球' },
+    ]
+    const s = pick(sets)
+    return {
+      question: '哪一个和别人不一样？',
+      speakText: '哪一个和别人不一样？',
+      hint: `想一想：${s.why}。`,
+      options: shuffle(s.items).map((v) => ({ value: v, emoji: v, label: '' })),
+      isCorrect: (opt) => opt.value === s.odd,
+      columns: 4,
+      big: true,
+    }
+  }
+  // shape odd-one: one shape differs
+  const main = pick(SHAPES)
+  let odd = pick(SHAPES)
+  while (odd === main) odd = pick(SHAPES)
+  const items = [main, main, main, odd, main]
+  return {
+    question: '哪一个图形不一样？',
+    speakText: '哪一个图形不一样？',
+    hint: '大部分都是一样的，只有一个不同。',
+    options: shuffle(items).map((v, i) => ({ value: `${v}-${i}`, emoji: v, label: '', odd: v === odd })),
+    isCorrect: (opt) => opt.odd,
+    columns: 5,
+    big: true,
+  }
+}
+
+// 规律设计师: child continues a pattern they see (free creation -> simplified to "what comes next in this repeating pattern")
+const designer = (difficulty) => {
+  const a = pick(SHAPES)
+  let b = pick(SHAPES)
+  while (b === a) b = pick(SHAPES)
+  const pattern = [a, b, a, b, a, b]
+  const answer = a // next after a,b,a,b,a,b is a
+  const options = shuffle([a, b]).map((v) => ({ value: v, emoji: v, label: '' }))
+  return {
+    question: '这个规律是你设计的：接下来应该放什么？',
+    speakText: '接下来应该放什么图形？',
+    hint: '看看它是按照什么顺序重复的。',
+    options,
+    isCorrect: (opt) => opt.value === answer,
+    columns: 2,
+    seq: { items: pattern },
+    big: true,
+  }
+}
+
+// 图形变换: predict next shape in a repeating shape pattern.
+const shapePattern = (difficulty) => {
+  const len = difficulty === 1 ? 2 : 3
+  const chosen = shuffle(SHAPES).slice(0, len)
+  const seq = Array.from({ length: 6 }, (_, i) => chosen[i % len])
+  const answer = chosen[6 % len]
+  const options = shuffle(SHAPES).slice(0, 4)
+  if (!options.includes(answer)) options[0] = answer
+  return {
+    question: '图形排队的规律是什么？下一个是谁？',
+    speakText: '下一个图形是谁？',
+    hint: `它们是 ${chosen.map((s) => SHAPE_NAMES[s]).join('、')} 这样重复的。`,
+    options: shuffle(options).map((v) => ({ value: v, emoji: v, label: '' })),
+    isCorrect: (opt) => opt.value === answer,
+    columns: 4,
+    seq: { items: seq },
+    big: true,
+  }
+}
+
+// 对错判断: is the given next item correct?
+const judge = (difficulty) => {
+  const start = randInt(1, 8)
+  const step = pick([2, 3])
+  const seq = Array.from({ length: 4 }, (_, i) => start + step * i)
+  const correctNext = start + step * 4
+  const isRight = Math.random() < 0.5
+  const shown = isRight ? correctNext : correctNext + pick([1, 2, 3])
+  const options = [
+    { value: 'yes', label: '✓ 对', correct: isRight },
+    { value: 'no', label: '✗ 不对', correct: !isRight },
+  ]
+  return {
+    question: `有人接：${seq.join('、')}、${shown}。他接得对吗？`,
+    speakText: `他接的对不对？`,
+    hint: `先算算每次增加几，再看 ${shown} 对不对。`,
+    options,
+    isCorrect: (opt) => opt.correct,
+    columns: 2,
+    big: true,
+    seq: { items: [...seq, shown], highlightLast: true, isNumber: true },
+  }
+}
+
+export const generators = {
+  sequence,
+  'odd-one-out': oddOneOut,
+  designer,
+  'shape-pattern': shapePattern,
+  judge,
+}
+
+export const generate = (gameId, difficulty, count) =>
+  Array.from({ length: count }, () => generators[gameId](difficulty))

@@ -1,0 +1,133 @@
+@import url('https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&family=Baloo+2:wght@400..800&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-display: "Baloo 2", "ZCOOL KuaiLe", "Comic Sans MS", "PingFang SC", "Microsoft YaHei", cursive, sans-serif;
+  --font-body: "Baloo 2", "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+
+  /* Module theme colors */
+  --color-sun: #FFB703;
+  --color-sun-deep: #FB8500;
+  --color-sky: #4CC9F0;
+  --color-sky-deep: #219EBC;
+  --color-leaf: #80B918;
+  --color-leaf-deep: #55A630;
+  --color-coral: #FF6B6B;
+  --color-coral-deep: #EE5253;
+  --color-grape: #B388EB;
+  --color-grape-deep: #8E7CC3;
+  --color-mint: #2EC4B6;
+  --color-mint-deep: #0F9E8E;
+  --color-peach: #FF9F1C;
+  --color-peach-deep: #E8890C;
+  --color-berry: #F15BB5;
+  --color-berry-deep: #D63E9C;
+  --color-rose: #EF476F;
+  --color-rose-deep: #D63A5E;
+
+  --color-cream: #FFF8EC;
+  --color-ink: #3D405B;
+  --color-ink-soft: #6B7280;
+
+  --animate-float: float 4s ease-in-out infinite;
+  --animate-wiggle: wiggle 0.5s ease-in-out;
+  --animate-pop: pop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  --animate-fall: fall 1.2s ease-in forwards;
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-12px); }
+  }
+  @keyframes wiggle {
+    0%, 100% { transform: rotate(0deg); }
+    25% { transform: rotate(-6deg); }
+    75% { transform: rotate(6deg); }
+  }
+  @keyframes pop {
+    0% { transform: scale(0.4); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  @keyframes fall {
+    0% { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(60px) rotate(20deg); opacity: 0; }
+  }
+}
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  color: var(--color-ink);
+  background: var(--color-cream);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* Chunky kid-friendly button base */
+.btn-chunky {
+  @apply inline-flex items-center justify-center gap-2 rounded-2xl font-bold select-none cursor-pointer;
+  @apply transition-all duration-150 active:scale-95;
+  box-shadow: 0 5px 0 rgba(0, 0, 0, 0.18);
+}
+.btn-chunky:active {
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.18);
+  transform: translateY(3px) scale(0.98);
+}
+
+/* Card with a soft "sticker" shadow */
+.card-sticker {
+  @apply rounded-3xl bg-white;
+  box-shadow: 0 8px 0 rgba(61, 64, 91, 0.08), 0 16px 40px rgba(61, 64, 91, 0.10);
+}
+
+/* Big friendly option tile */
+.option-tile {
+  @apply flex items-center justify-center rounded-2xl font-bold cursor-pointer select-none;
+  @apply transition-all duration-150;
+  box-shadow: 0 5px 0 rgba(0, 0, 0, 0.15);
+}
+.option-tile:active {
+  transform: translateY(3px);
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.15);
+}
+
+/* Dotted "notebook" background for play areas */
+.bg-dots {
+  background-image: radial-gradient(rgba(61, 64, 91, 0.12) 1.5px, transparent 1.5px);
+  background-size: 22px 22px;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #e5d9bf; border-radius: 8px; }
+::-webkit-scrollbar-thumb:hover { background: #d9c9a8; }
+
+/* Hide scrollbar utility (for horizontal filter strips) */
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+
+/* Mobile touch optimizations */
+@media (max-width: 640px) {
+  /* Prevent double-tap zoom delay */
+  * { touch-action: manipulation; }
+
+  /* Safe area for notched phones */
+  body {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* Smaller card shadows on mobile for performance */
+  .card-sticker {
+    box-shadow: 0 4px 0 rgba(61, 64, 91, 0.08), 0 8px 20px rgba(61, 64, 91, 0.08);
+  }
+
+  /* Ensure minimum touch target size */
+  .btn-chunky, .option-tile {
+    min-height: 44px;
+  }
+}
