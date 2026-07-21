@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { MODULES } from '../data/config'
 import { useProgressStore } from '../stores/useProgressStore'
+import { useAbilityStore } from '../stores/useAbilityStore'
 import { playClick } from '../utils/audio'
 
 const COLOR_HEX = {
@@ -11,15 +12,14 @@ const COLOR_HEX = {
 }
 
 // N-axis radar chart built with SVG (one axis per module).
-function RadarChart({ moduleStats }) {
+function RadarChart({ scores }) {
   const size = 300
   const cx = size / 2
   const cy = size / 2
   const radius = 100
   const n = MODULES.length
 
-  // Normalize each module's stars to 0-1 (cap at 30 for full).
-  const values = MODULES.map((m) => Math.min(1, (moduleStats[m.id]?.stars || 0) / 30))
+  const values = MODULES.map((m) => Math.min(1, Math.max(0, (scores[m.id] ?? 50) / 100)))
 
   const point = (i, scale) => {
     const angle = (Math.PI * 2 * i) / n - Math.PI / 2
@@ -110,6 +110,8 @@ function Calendar({ dailyLog }) {
 
 export default function Progress() {
   const { totalStars, streak, badges, dailyLog, moduleStats } = useProgressStore()
+  const modules = useAbilityStore((s) => s.modules)
+  const scores = Object.fromEntries(Object.entries(modules).map(([id, m]) => [id, m.score]))
   const trainedDays = Object.keys(dailyLog).length
 
   return (
@@ -145,11 +147,10 @@ export default function Progress() {
       </header>
 
       <main className="max-w-4xl mx-auto px-6 -mt-8 relative z-10 grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Radar chart */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="card-sticker p-5">
           <h2 className="font-display text-2xl text-ink mb-2">🧠 能力雷达图</h2>
           <div className="flex justify-center">
-            <RadarChart moduleStats={moduleStats} />
+            <RadarChart scores={scores} />
           </div>
         </motion.div>
 

@@ -122,10 +122,9 @@ export async function loadAiQuestions(moduleId, gameId, count) {
     }
   }
 
-  // 2) Fall back to previously saved AI questions from the local bank.
-  // Use the manual difficulty setting for bank lookup (consistent with local generators).
-  const manualLevel = settings.difficulty || 1
-  const banked = useQuestionBankStore.getState().getQuestions(moduleId, gameId, count, manualLevel)
+  // 2) Fall back to bank at the manual difficulty setting.
+  const level = settings.difficulty || 1
+  const banked = useQuestionBankStore.getState().getQuestions(moduleId, gameId, count, level)
   if (banked.length) {
     const normalized = banked
       .map(normalizeQuestion)

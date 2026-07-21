@@ -249,11 +249,11 @@ export default function Settings() {
             <Toggle on={s.soundEnabled} onChange={s.setSound} />
           </Row>
 
-          <Row emoji="🗣️" title="语音朗读" desc="把题目读给小朋友听">
+          <Row emoji="🗣️" title="自动读题" desc="打开后进入每道题会自动朗读">
             <Toggle on={s.speechEnabled} onChange={s.setSpeech} />
           </Row>
 
-          <Row emoji="🌱" title="难度级别" desc="也可以由系统自动调节">
+          <Row emoji="📶" title="难度级别" desc="低→中→高，数字越大越难">
             <div className="flex gap-2">
               {DIFFICULTY_LEVELS.map((d) => (
                 <button
@@ -264,7 +264,7 @@ export default function Settings() {
                     s.difficulty === d.level ? 'bg-leaf text-white' : 'bg-white text-ink border-2 border-ink/10'
                   }`}
                 >
-                  {d.emoji} {d.name}
+                  {d.name}
                 </button>
               ))}
             </div>

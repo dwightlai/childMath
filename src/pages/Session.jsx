@@ -7,13 +7,12 @@ import { useProgressStore } from '../stores/useProgressStore'
 import { useAbilityStore } from '../stores/useAbilityStore'
 import GameDispatcher from '../components/GameDispatcher'
 import RewardModal from '../components/RewardModal'
-import { pick, shuffle } from '../utils/helpers'
+import { pick } from '../utils/helpers'
 import { playClick } from '../utils/audio'
 import { loadAiQuestions } from '../services/question-loader'
+import { getDailyPlan } from '../services/daily-plan'
 
-// Games considered "light" for the warmup phase.
 const WARMUP_GAMES = ['make-ten', 'compare', 'quick-count', 'find-friend']
-// Games considered "hands-on" for the challenge phase.
 const HANDS_ON = {
   'number-sense': ['estimate', 'split-number'],
   'quantity-relation': ['arrange', 'more-less'],
@@ -31,6 +30,13 @@ const REFLECTIONS = [
   '有没有用到画图或者摆一摆？',
 ]
 
+function resolveGame(moduleId, gameId, fallbackIds) {
+  const mod = getModule(moduleId) || MODULES[0]
+  return mod.games.find((g) => g.id === gameId)
+    || mod.games.find((g) => (fallbackIds || []).includes(g.id))
+    || pick(mod.games)
+}
+
 export default function Session() {
   const { moduleId } = useParams()
   const navigate = useNavigate()
@@ -39,7 +45,6 @@ export default function Session() {
   const recordSession = useProgressStore((s) => s.recordSession)
   const addBadge = useProgressStore((s) => s.addBadge)
 
-  // phase: 0 warmup, 1 core, 2 challenge, 3 summary
   const [phase, setPhase] = useState(0)
   const [phaseStarted, setPhaseStarted] = useState(false)
   const [sessionStars, setSessionStars] = useState(0)
@@ -47,44 +52,60 @@ export default function Session() {
   const [showReward, setShowReward] = useState(false)
   const [recorded, setRecorded] = useState(false)
   const reflection = useMemo(() => pick(REFLECTIONS), [])
-
-  // AI-generated questions cached per phase (loaded during the interstitial).
   const [aiQuestions, setAiQuestions] = useState({})
-  // Questions locked in for the currently active phase (stable during the game).
   const [activeQuestions, setActiveQuestions] = useState(null)
-  // Whether the AI/bank preload is still in progress for the current phase.
-  // Initialize to true when AI is enabled so the first render already shows loading.
   const [aiLoading, setAiLoading] = useState(() => useSettingsStore.getState().aiEnabled)
+  const [dailyPlan, setDailyPlan] = useState(null)
 
   const recordAnswer = useAbilityStore((s) => s.recordAnswer)
   const aiEnabled = useSettingsStore((s) => s.aiEnabled)
 
-  // Pick games for each phase (stable per mount).
+  useEffect(() => {
+    let cancelled = false
+    getDailyPlan().then((p) => { if (!cancelled) setDailyPlan(p) })
+    return () => { cancelled = true }
+  }, [])
+
   const plan = useMemo(() => {
-    const coreGame = pick(module.games)
     const handsOn = HANDS_ON[module.id] || module.games.map((g) => g.id)
+    if (dailyPlan?.warmup && dailyPlan?.core) {
+      const warmupMod = dailyPlan.warmup.module || 'number-sense'
+      const coreMod = dailyPlan.core.module || module.id
+      const challengeMod = dailyPlan.challenge?.module || module.id
+      return {
+        warmup: {
+          moduleId: warmupMod,
+          game: resolveGame(warmupMod, dailyPlan.warmup.game, WARMUP_GAMES),
+        },
+        core: {
+          moduleId: coreMod,
+          game: resolveGame(coreMod, dailyPlan.core.game),
+        },
+        challenge: {
+          moduleId: challengeMod,
+          game: resolveGame(challengeMod, dailyPlan.challenge?.game, handsOn),
+        },
+      }
+    }
+    const coreGame = pick(module.games)
     const challengeCandidates = handsOn.filter((id) => id !== coreGame.id)
     const challengeGame =
       module.games.find((g) => g.id === pick(challengeCandidates.length ? challengeCandidates : [coreGame.id])) || coreGame
     return {
-      warmup: { moduleId: 'number-sense', game: getModule('number-sense').games.find((g) => g.id === pick(WARMUP_GAMES)) },
+      warmup: { moduleId: 'number-sense', game: resolveGame('number-sense', pick(WARMUP_GAMES), WARMUP_GAMES) },
       core: { moduleId: module.id, game: coreGame },
       challenge: { moduleId: module.id, game: challengeGame },
     }
-  }, [module])
+  }, [module, dailyPlan])
 
   const phaseConfig = SESSION_PHASES[phase]
-
   const currentPlan = phase === 0 ? plan.warmup : phase === 1 ? plan.core : plan.challenge
+  const playDifficulty = difficulty
 
-  // Preload AI questions while the phase interstitial is showing, so they are
-  // ready by the time the child presses "开始". Falls back silently to local
-  // generators if AI is unavailable or slow.
   useEffect(() => {
     if (phaseStarted || phase >= 3) return undefined
     const cp = phase === 0 ? plan.warmup : phase === 1 ? plan.core : plan.challenge
     let cancelled = false
-    // Only show loading spinner when AI is enabled (otherwise local is instant).
     if (aiEnabled) setAiLoading(true)
     loadAiQuestions(cp.moduleId, cp.game.id, SESSION_PHASES[phase].questionCount).then((qs) => {
       if (!cancelled) {
@@ -94,12 +115,9 @@ export default function Session() {
     }).catch(() => {
       if (!cancelled) setAiLoading(false)
     })
-    return () => {
-      cancelled = true
-    }
+    return () => { cancelled = true }
   }, [phase, phaseStarted, plan, aiEnabled])
 
-  // Record each solved question into the ability model.
   const handleQuestionResult = useCallback(
     (result) => {
       recordAnswer(currentPlan.moduleId, currentPlan.game.id, result)
@@ -111,7 +129,6 @@ export default function Session() {
     (result) => {
       setSessionStars((s) => s + result.stars)
       setStats((st) => ({ correct: st.correct + result.correct, answered: st.answered + result.answered }))
-      // move to next phase
       setTimeout(() => {
         setPhase((p) => p + 1)
         setPhaseStarted(false)
@@ -302,7 +319,7 @@ export default function Session() {
             <GameDispatcher
               moduleId={currentPlan.moduleId}
               gameId={currentPlan.game.id}
-              difficulty={difficulty}
+              difficulty={playDifficulty}
               questionCount={phaseConfig.questionCount}
               color={module.color}
               gameName={currentPlan.game.name}

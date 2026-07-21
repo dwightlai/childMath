@@ -12,8 +12,14 @@ const sequence = (difficulty) => {
   const seq = Array.from({ length: 4 }, (_, i) => start + step * i)
   const answer = start + step * 4
   const options = shuffle([answer, answer + 1, answer - 1, answer + 2].filter((v, i, a) => a.indexOf(v) === i).slice(0, 4)).map((v) => ({ value: v }))
+  const stems = [
+    '找规律，空格里应该填什么数？',
+    `小火车开过来了：${seq.join('、')}、？ 下一站是几？`,
+    `按规律往下写，${seq[seq.length - 1]} 后面是几？`,
+    `每次${step > 0 ? '加' : '减'}${Math.abs(step)}，下一个数是？`,
+  ]
   return {
-    question: '找规律，空格里应该填什么数？',
+    question: pick(stems),
     speakText: '找规律，空格里应该填什么数？',
     hint: `看看后面的数比前面的数多几（或少几）？`,
     options,

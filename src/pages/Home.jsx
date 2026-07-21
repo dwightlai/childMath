@@ -48,11 +48,6 @@ export default function Home() {
     <div className="min-h-full pb-16">
       {/* Header */}
       <header className="relative overflow-hidden bg-gradient-to-br from-sun via-sun to-sun-deep px-6 pt-5 pb-12 rounded-b-[2rem]">
-        {/* floating decorations */}
-        <span className="absolute top-4 right-8 text-3xl animate-float">🎈</span>
-        <span className="absolute top-3 right-24 text-2xl animate-float" style={{ animationDelay: '1s' }}>➕</span>
-        <span className="absolute bottom-4 left-8 text-2xl animate-float" style={{ animationDelay: '0.5s' }}>✖️</span>
-
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div>
             <h1 className="font-display text-3xl sm:text-4xl text-white drop-shadow-[0_3px_0_rgba(0,0,0,0.2)]">

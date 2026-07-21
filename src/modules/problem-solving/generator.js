@@ -29,7 +29,10 @@ const LIFE_TEMPLATES = [
   () => {
     const a = randInt(2, 9), b = randInt(2, 9)
     return {
-      text: `超市里苹果 ${a} 元，香蕉 ${b} 元，两样一起买要几元？`,
+      text: pick([
+        `超市里苹果 ${a} 元，香蕉 ${b} 元，两样一起买要几元？`,
+        `买面包 ${a} 元、牛奶 ${b} 元，一共要付多少元？`,
+      ]),
       answer: `${a} + ${b} = ${a + b}`,
       hint: '两样一起买，要把价钱合起来。',
     }
@@ -37,7 +40,10 @@ const LIFE_TEMPLATES = [
   () => {
     const money = randInt(8, 15), cost = randInt(2, money - 1)
     return {
-      text: `你有 ${money} 元，买了一支 ${cost} 元的笔，应找回几元？`,
+      text: pick([
+        `你有 ${money} 元，买了一支 ${cost} 元的笔，应找回几元？`,
+        `付给收银员 ${money} 元，东西 ${cost} 元，找回几元？`,
+      ]),
       answer: `${money} - ${cost} = ${money - cost}`,
       hint: '找回的钱 = 付出的 - 花掉的。',
     }
@@ -66,9 +72,42 @@ const LIFE_TEMPLATES = [
       hint: '"吃掉"表示变少，用减法。',
     }
   },
+  () => {
+    const h = randInt(1, 11)
+    return {
+      text: pick([
+        `钟面上时针指向 ${h}，分针指向 12，现在是几点？`,
+        `短针指着 ${h}，长针指着 12，是 ${h} 点整吗？选正确算式含义：现在是几点整？`,
+      ]),
+      answer: `${h} 点`,
+      hint: '分针指 12 就是整点。',
+      options: shuffle([`${h} 点`, `${h + 1} 点`, `${Math.max(1, h - 1)} 点`, `${h} 点半`]).map((v) => ({ value: v, label: v })),
+      isClock: true,
+    }
+  },
+  () => {
+    const h = randInt(1, 10)
+    return {
+      text: `现在是 ${h} 点，再过 1 小时是几点？`,
+      answer: `${h + 1} 点`,
+      hint: '过 1 小时，时针往前走一格。',
+      options: shuffle([`${h + 1} 点`, `${h} 点`, `${h + 2} 点`, `${h} 点半`]).map((v) => ({ value: v, label: v })),
+      isClock: true,
+    }
+  },
 ]
 const lifeMath = () => {
   const s = pick(LIFE_TEMPLATES)()
+  if (s.isClock) {
+    return {
+      question: s.text,
+      speakText: s.text,
+      hint: s.hint,
+      options: s.options,
+      isCorrect: (opt) => opt.value === s.answer,
+      columns: 2,
+    }
+  }
   const nums = s.text.match(/\d+/g).map(Number)
   const [x, y] = [nums[0], nums[1] || 1]
   const pool = [

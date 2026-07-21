@@ -1,24 +1,12 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import AudioButton from './AudioButton'
 import StarBurst from './StarBurst'
 import { playCorrect, playWrong, playStar } from '../utils/audio'
+import { speak, stopSpeak } from '../utils/speech'
+import { useSettingsStore } from '../stores/useSettingsStore'
 import { PRAISE, ENCOURAGE } from '../data/config'
 import { pick } from '../utils/helpers'
 
-/**
- * QuestionShell standardizes the question experience for every game.
- *
- * Props:
- *  - question: string (question text, also used for TTS)
- *  - hint: string (optional hint shown after a wrong answer)
- *  - color: module color key
- *  - index / total: question position for progress dots
- *  - onResult(correct: bool): called once when the question is finally answered correctly
- *  - children: render function or node for the interactive body.
- *      If a function, it receives { answer, wrong, locked, feedback } helpers.
- *  - autoRead: read the question aloud when it mounts
- */
 export default function QuestionShell({
   question,
   hint,
@@ -27,14 +15,14 @@ export default function QuestionShell({
   total = 1,
   onResult,
   children,
-  autoRead = false,
   speakText,
 }) {
   const [wrongCount, setWrongCount] = useState(0)
   const [solved, setSolved] = useState(false)
-  const [feedback, setFeedback] = useState(null) // {type:'good'|'try', text}
+  const [feedback, setFeedback] = useState(null)
   const [showHint, setShowHint] = useState(false)
   const [burst, setBurst] = useState(0)
+  const speechEnabled = useSettingsStore((s) => s.speechEnabled)
 
   const colorMap = {
     sun: '#FFB703', sky: '#4CC9F0', leaf: '#80B918',
@@ -43,7 +31,15 @@ export default function QuestionShell({
   }
   const accent = colorMap[color] || colorMap.sun
 
-  // Called by the game body when the child submits an answer.
+  useEffect(() => {
+    if (!speechEnabled) return undefined
+    const t = window.setTimeout(() => speak(speakText || question), 280)
+    return () => {
+      window.clearTimeout(t)
+      stopSpeak()
+    }
+  }, [question, speakText, speechEnabled, index])
+
   const answer = useCallback(
     (isCorrect, selectedValue) => {
       if (solved) return
@@ -79,7 +75,6 @@ export default function QuestionShell({
     <div className="w-full max-w-2xl mx-auto flex flex-col gap-4">
       <StarBurst trigger={burst} />
 
-      {/* progress dots */}
       {total > 1 && (
         <div className="flex justify-center gap-2">
           {[...Array(total)].map((_, i) => (
@@ -96,13 +91,10 @@ export default function QuestionShell({
         </div>
       )}
 
-      {/* question header */}
-      <div className="card-sticker p-4 sm:p-5 flex items-start gap-3">
-        <AudioButton text={speakText || question} />
-        <p className="font-display text-xl sm:text-2xl leading-relaxed text-ink flex-1 pt-1">{question}</p>
+      <div className="card-sticker p-4 sm:p-5">
+        <p className="font-display text-xl sm:text-2xl leading-relaxed text-ink">{question}</p>
       </div>
 
-      {/* hint */}
       <AnimatePresence>
         {showHint && hint && !solved && (
           <motion.div
@@ -117,10 +109,8 @@ export default function QuestionShell({
         )}
       </AnimatePresence>
 
-      {/* interactive body */}
       <div>{typeof children === 'function' ? children(helpers) : children}</div>
 
-      {/* feedback banner */}
       <AnimatePresence>
         {feedback && (
           <motion.div

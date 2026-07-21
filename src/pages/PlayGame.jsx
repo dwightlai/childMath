@@ -15,7 +15,8 @@ export default function PlayGame() {
   const navigate = useNavigate()
   const module = getModule(moduleId)
   const game = module?.games.find((g) => g.id === gameId)
-  const difficulty = useSettingsStore((s) => s.difficulty)
+  const manualDifficulty = useSettingsStore((s) => s.difficulty)
+  const difficulty = manualDifficulty
   const aiEnabled = useSettingsStore((s) => s.aiEnabled)
   const recordAnswer = useAbilityStore((s) => s.recordAnswer)
 

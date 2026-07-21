@@ -97,13 +97,15 @@ const STRATEGIES = [
 ]
 const SCENARIOS = [
   { text: '一排小朋友，小红前面有 3 人，后面有 2 人，一共有几人？', answer: 'draw', why: '画一画、数一数就清楚了。' },
-  { text: '计算 36 + 27，怎样算更快更准？', answer: 'split', why: '把数拆开凑整，更好算。' },
+  { text: '计算 8 + 5，怎样算更快更准？', answer: 'split', why: '把数拆开凑十，更好算。' },
   { text: '一个数加上 6 等于 15，这个数是几？', answer: 'back', why: '从结果 15 往回减 6。' },
   { text: '周一存 1 元、周二存 2 元……想知道周五一共存了几元。', answer: 'list', why: '列个表，一天一天记清楚。' },
   { text: '停车场原来有一些车，开走 4 辆后还剩 7 辆，原来有几辆？', answer: 'back', why: '从剩下的往回加。' },
   { text: '小明排在第 5 个，他后面还有 6 个，一共有几个小朋友？', answer: 'draw', why: '画出来数一数最直观。' },
-  { text: '计算 48 + 35，怎样更简便？', answer: 'split', why: '拆成整十和零头再相加。' },
+  { text: '计算 9 + 6，怎样更简便？', answer: 'split', why: '拆成凑十再相加。' },
   { text: '每天读几页书，想记录一周读了多少页。', answer: 'list', why: '用表格记录最清楚。' },
+  { text: '从 20 里连续减去 4，减到 0 要减几次？', answer: 'list', why: '列出来不容易乱。' },
+  { text: '盒子里有一些球，拿走 3 个还剩 8 个，原来几个？', answer: 'back', why: '从剩下的往回加。' },
 ]
 const toolBox = () => {
   const s = pick(SCENARIOS)

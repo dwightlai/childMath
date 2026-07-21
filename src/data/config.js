@@ -157,9 +157,9 @@ export const SESSION_PHASES = [
 
 // Difficulty levels
 export const DIFFICULTY_LEVELS = [
-  { level: 1, name: '小苗苗', emoji: '🌱' },
-  { level: 2, name: '小花朵', emoji: '🌼' },
-  { level: 3, name: '小果树', emoji: '🌳' },
+  { level: 1, name: '低', emoji: '①' },
+  { level: 2, name: '中', emoji: '②' },
+  { level: 3, name: '高', emoji: '③' },
 ]
 
 // Encouragement messages
