@@ -39,7 +39,7 @@ export default function PlayGame() {
       if (!cancelled) setLoading(false)
     })
     return () => { cancelled = true }
-  }, [moduleId, gameId, module, game])
+  }, [moduleId, gameId, module, game, manualDifficulty, aiEnabled])
 
   const handleQuestionResult = useCallback(
     (r) => { if (module) recordAnswer(moduleId, gameId, r) },

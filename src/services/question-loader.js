@@ -2,7 +2,7 @@
 // callers to fall back to the local generators.
 
 import { generateQuestions, isAiReady } from './ai-service'
-import { buildAbilitySummary, difficultyToLevel } from './ability-model'
+import { buildAbilitySummary } from './ability-model'
 import { useAbilityStore } from '../stores/useAbilityStore'
 import { useSettingsStore } from '../stores/useSettingsStore'
 import { useQuestionBankStore } from '../stores/useQuestionBankStore'
@@ -78,6 +78,13 @@ export function normalizeQuestion(aiQ) {
  * Attempt to load AI-generated questions for a game.
  * Returns a normalized question array, or null (caller falls back to local).
  */
+function levelToAiDifficulty(level) {
+  const lv = Number(level) || 1
+  if (lv <= 1) return { numberSize: 1, thinkingSteps: 1, abstraction: 1 }
+  if (lv === 2) return { numberSize: 2, thinkingSteps: 2, abstraction: 2 }
+  return { numberSize: 3, thinkingSteps: 2, abstraction: 3 }
+}
+
 export async function loadAiQuestions(moduleId, gameId, count) {
   const settings = useSettingsStore.getState()
   if (INTERACTIVE_GAMES.has(gameId)) return null
@@ -87,13 +94,13 @@ export async function loadAiQuestions(moduleId, gameId, count) {
   const game = module.games.find((g) => g.id === gameId)
   if (!game) return null
 
-  // 1) Try live AI generation first (when configured).
+  const level = settings.difficulty || 1
+
+  // 1) Try live AI generation first (when configured) — 难度跟设置，不跟自适应。
   if (isAiReady(settings)) {
     try {
       const ability = useAbilityStore.getState()
       const abilitySummary = buildAbilitySummary(ability.modules, ability.gameStats)
-      const adaptiveDiff = ability.getAdaptiveDifficulty(moduleId)
-      const difficultyLevel = difficultyToLevel(adaptiveDiff)
       const weakAreas = ability.getWeakGames(moduleId, 2).map((w) => w.gameId)
 
       const raw = await generateQuestions(
@@ -104,26 +111,23 @@ export async function loadAiQuestions(moduleId, gameId, count) {
           gameName: game.name,
           gameDesc: GAME_DESCS[gameId] || module.desc,
           count,
-          difficulty: adaptiveDiff,
+          difficulty: levelToAiDifficulty(level),
           weakAreas,
         },
       )
       if (raw) {
-        // Persist the fresh AI questions into the local bank at the current difficulty level.
-        useQuestionBankStore.getState().addQuestions(moduleId, gameId, raw, difficultyLevel)
+        useQuestionBankStore.getState().addQuestions(moduleId, gameId, raw, level)
         const normalized = raw
           .map(normalizeQuestion)
           .filter((q) => q.question && q.options.length >= 2)
         if (normalized.length) return normalized
       }
     } catch (err) {
-      // AI failed (network error, timeout, bad response) — silently fall through to bank/local.
       console.warn('[question-loader] AI generation failed, falling back:', err?.message || err)
     }
   }
 
   // 2) Fall back to bank at the manual difficulty setting.
-  const level = settings.difficulty || 1
   const banked = useQuestionBankStore.getState().getQuestions(moduleId, gameId, count, level)
   if (banked.length) {
     const normalized = banked
