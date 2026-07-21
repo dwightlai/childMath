@@ -7,8 +7,9 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "deploy": "npm run build && edgeone makers deploy ./dist -n childmath -e production",
-    "deploy:preview": "npm run build && edgeone makers deploy ./dist -n childmath -e preview"
+    "deploy": "npm run build && vercel deploy --prod -y",
+    "deploy:preview": "npm run build && vercel deploy -y",
+    "deploy:edgeone": "npm run build && edgeone makers deploy ./dist -n childmath -e production"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^6.0.3",
