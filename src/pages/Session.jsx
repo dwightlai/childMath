@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { getModule, SESSION_PHASES, MODULES } from '../data/config'
+import { getModule, SESSION_PHASES } from '../data/config'
 import { useSettingsStore } from '../stores/useSettingsStore'
 import { useProgressStore } from '../stores/useProgressStore'
 import { useAbilityStore } from '../stores/useAbilityStore'
@@ -16,10 +16,54 @@ const WARMUP_GAMES = ['make-ten', 'compare', 'quick-count', 'find-friend']
 const HANDS_ON = {
   'number-sense': ['estimate', 'split-number'],
   'quantity-relation': ['arrange', 'more-less'],
+  'calc-strategy': ['tool-box', 'multi-method'],
   pattern: ['designer', 'odd-one-out'],
   spatial: ['maze', 'tangram', 'block-count'],
   logic: ['little-detective', 'ordering'],
   'problem-solving': ['fair-share', 'make-change', 'free-build'],
+  'math-expression': ['step-order', 'find-mistake'],
+  'data-thinking': ['simple-survey', 'compare-data'],
+}
+
+/** 在本岛内选 3 个不同小关：热身 / 核心 / 动手 */
+function buildIslandPlan(module, preferred = {}) {
+  const games = module.games
+  const byId = (id) => games.find((g) => g.id === id)
+  const handsOnIds = (HANDS_ON[module.id] || games.map((g) => g.id)).filter((id) => byId(id))
+  const used = new Set()
+
+  const take = (candidates, fallbackAll = games) => {
+    const pool = (candidates || [])
+      .map((id) => (typeof id === 'string' ? byId(id) : id))
+      .filter((g) => g && !used.has(g.id))
+    const g = pool.length ? pick(pool) : pick(fallbackAll.filter((x) => !used.has(x.id))) || pick(fallbackAll)
+    if (g) used.add(g.id)
+    return g
+  }
+
+  const warmupPref =
+    module.id === 'number-sense'
+      ? WARMUP_GAMES.filter((id) => byId(id))
+      : games.filter((g) => !handsOnIds.includes(g.id)).map((g) => g.id)
+  const warmup = take(
+    preferred.warmup && byId(preferred.warmup) ? [preferred.warmup] : warmupPref,
+  )
+
+  const corePool = games.filter((g) => !handsOnIds.includes(g.id)).map((g) => g.id)
+  const core = take(
+    preferred.core && byId(preferred.core) ? [preferred.core] : (corePool.length ? corePool : games.map((g) => g.id)),
+  )
+
+  const challenge = take(
+    preferred.challenge && byId(preferred.challenge) ? [preferred.challenge] : handsOnIds,
+    games,
+  )
+
+  return {
+    warmup: { moduleId: module.id, game: warmup },
+    core: { moduleId: module.id, game: core },
+    challenge: { moduleId: module.id, game: challenge },
+  }
 }
 
 const REFLECTIONS = [
@@ -30,17 +74,10 @@ const REFLECTIONS = [
   '有没有用到画图或者摆一摆？',
 ]
 
-function resolveGame(moduleId, gameId, fallbackIds) {
-  const mod = getModule(moduleId) || MODULES[0]
-  return mod.games.find((g) => g.id === gameId)
-    || mod.games.find((g) => (fallbackIds || []).includes(g.id))
-    || pick(mod.games)
-}
-
 export default function Session() {
   const { moduleId } = useParams()
   const navigate = useNavigate()
-  const module = getModule(moduleId) || MODULES[0]
+  const module = getModule(moduleId) || getModule('number-sense')
   const difficulty = useSettingsStore((s) => s.difficulty)
   const recordSession = useProgressStore((s) => s.recordSession)
   const addBadge = useProgressStore((s) => s.addBadge)
@@ -67,35 +104,16 @@ export default function Session() {
   }, [])
 
   const plan = useMemo(() => {
-    const handsOn = HANDS_ON[module.id] || module.games.map((g) => g.id)
-    if (dailyPlan?.warmup && dailyPlan?.core) {
-      const warmupMod = dailyPlan.warmup.module || 'number-sense'
-      const coreMod = dailyPlan.core.module || module.id
-      const challengeMod = dailyPlan.challenge?.module || module.id
-      return {
-        warmup: {
-          moduleId: warmupMod,
-          game: resolveGame(warmupMod, dailyPlan.warmup.game, WARMUP_GAMES),
-        },
-        core: {
-          moduleId: coreMod,
-          game: resolveGame(coreMod, dailyPlan.core.game),
-        },
-        challenge: {
-          moduleId: challengeMod,
-          game: resolveGame(challengeMod, dailyPlan.challenge?.game, handsOn),
-        },
-      }
-    }
-    const coreGame = pick(module.games)
-    const challengeCandidates = handsOn.filter((id) => id !== coreGame.id)
-    const challengeGame =
-      module.games.find((g) => g.id === pick(challengeCandidates.length ? challengeCandidates : [coreGame.id])) || coreGame
-    return {
-      warmup: { moduleId: 'number-sense', game: resolveGame('number-sense', pick(WARMUP_GAMES), WARMUP_GAMES) },
-      core: { moduleId: module.id, game: coreGame },
-      challenge: { moduleId: module.id, game: challengeGame },
-    }
+    // 进哪个岛就只玩哪个岛；今日计划仅在「推荐岛=当前岛」时提供偏好小关
+    const sameFocus = dailyPlan?.focusModule === module.id
+    const preferred = sameFocus
+      ? {
+          warmup: dailyPlan.warmup?.module === module.id ? dailyPlan.warmup.game : null,
+          core: dailyPlan.core?.module === module.id ? dailyPlan.core.game : null,
+          challenge: dailyPlan.challenge?.module === module.id ? dailyPlan.challenge.game : null,
+        }
+      : {}
+    return buildIslandPlan(module, preferred)
   }, [module, dailyPlan])
 
   const phaseConfig = SESSION_PHASES[phase]
