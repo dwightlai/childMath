@@ -1,7 +1,7 @@
 // 数据意识 (data-thinking) question generators.
 // Focus: classifying, counting, reading simple charts, comparing data — early data literacy.
 
-import { randInt, pick, shuffle, numericOptions } from '../../utils/helpers'
+import { randInt, pick, shuffle, numericOptions, generateUnique } from '../../utils/helpers'
 
 const FRUITS = [
   { name: '苹果', emoji: '🍎' },
@@ -178,4 +178,4 @@ export const generators = {
 }
 
 export const generate = (gameId, difficulty, count) =>
-  Array.from({ length: count }, () => generators[gameId](difficulty))
+  generateUnique(() => generators[gameId](difficulty), count)

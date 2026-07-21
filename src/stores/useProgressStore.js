@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { persistStorage } from '../db/persistStorage'
 import { MODULES } from '../data/config'
 
 const todayKey = () => {
@@ -75,7 +76,7 @@ export const useProgressStore = create(
           lastPlayDate: null,
         }),
     }),
-    { name: 'childmath-progress' },
+    { name: 'childmath-progress', storage: persistStorage },
   ),
 )
 

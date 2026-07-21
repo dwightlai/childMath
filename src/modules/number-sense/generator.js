@@ -1,5 +1,5 @@
 // Question generators for the Number Sense module — multiple stems per game.
-import { randInt, pick, shuffle, numericOptions } from '../../utils/helpers'
+import { randInt, pick, shuffle, numericOptions, generateUnique } from '../../utils/helpers'
 
 const ITEMS = ['🍎', '🍓', '🍊', '🍇', '🍬', '⭐', '🐟', '🌸', '🐤', '🍩']
 const NAMES = ['小明', '小红', '小兔', '小熊', '老师', '妈妈']
@@ -179,4 +179,4 @@ export const generators = {
 }
 
 export const generate = (gameId, difficulty, count) =>
-  Array.from({ length: count }, () => generators[gameId](difficulty))
+  generateUnique(() => generators[gameId](difficulty), count)

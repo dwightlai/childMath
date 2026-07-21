@@ -3,6 +3,7 @@
 
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { persistStorage } from '../db/persistStorage'
 
 // Max mistakes to keep (prevent unbounded growth).
 const MAX_MISTAKES = 500
@@ -114,6 +115,6 @@ export const useMistakeStore = create(
         set({ mistakes: [] })
       },
     }),
-    { name: 'childmath-mistakes' },
+    { name: 'childmath-mistakes', storage: persistStorage },
   ),
 )

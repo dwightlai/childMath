@@ -2,7 +2,7 @@
 // Focus: reflecting on and expressing HOW you solved something — methods, step order, spotting mistakes.
 // my-method & find-mistake are quiz-style; step-order is an interactive drag game (see StepOrderGame.jsx).
 
-import { pick, shuffle } from '../../utils/helpers'
+import { pick, shuffle, generateUnique } from '../../utils/helpers'
 
 // 我用的方法: show a simple solved problem, ask which method was used.
 const METHOD_OPTIONS = [
@@ -106,4 +106,4 @@ export const generators = {
 }
 
 export const generate = (gameId, difficulty, count) =>
-  Array.from({ length: count }, () => generators[gameId](difficulty))
+  generateUnique(() => generators[gameId](difficulty), count)

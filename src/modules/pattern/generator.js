@@ -1,5 +1,5 @@
 // Question generators for the Pattern module.
-import { randInt, pick, shuffle } from '../../utils/helpers'
+import { randInt, pick, shuffle, generateUnique } from '../../utils/helpers'
 
 const SHAPES = ['🔴', '🔵', '🟢', '🟡', '🟣', '🔶']
 const SHAPE_NAMES = { '🔴': '红圆', '🔵': '蓝圆', '🟢': '绿圆', '🟡': '黄圆', '🟣': '紫圆', '🔶': '橙方块' }
@@ -72,16 +72,24 @@ const designer = (difficulty) => {
   const a = pick(SHAPES)
   let b = pick(SHAPES)
   while (b === a) b = pick(SHAPES)
-  const pattern = [a, b, a, b, a, b]
-  const answer = a // next after a,b,a,b,a,b is a
-  const options = shuffle([a, b]).map((v) => ({ value: v, emoji: v, label: '' }))
+  let c = pick(SHAPES)
+  while (c === a || c === b) c = pick(SHAPES)
+  const useAbc = difficulty >= 2 && Math.random() < 0.45
+  const pattern = useAbc ? [a, b, c, a, b, c] : [a, b, a, b, a, b]
+  const answer = a
+  const opts = useAbc ? [a, b, c] : [a, b]
+  while (opts.length < 2) opts.push(pick(SHAPES))
   return {
-    question: '这个规律是你设计的：接下来应该放什么？',
+    question: pick([
+      '这个规律是你设计的：接下来应该放什么？',
+      '按规律排下去，下一个图形是？',
+      `前面是 ${pattern.slice(0, 4).join('')}…，下一个？`,
+    ]),
     speakText: '接下来应该放什么图形？',
-    hint: '看看它是按照什么顺序重复的。',
-    options,
+    hint: useAbc ? '三个一组循环。' : '看看它是按照什么顺序重复的。',
+    options: shuffle(opts).map((v) => ({ value: v, emoji: v, label: '' })),
     isCorrect: (opt) => opt.value === answer,
-    columns: 2,
+    columns: opts.length,
     seq: { items: pattern },
     big: true,
   }
@@ -140,4 +148,4 @@ export const generators = {
 }
 
 export const generate = (gameId, difficulty, count) =>
-  Array.from({ length: count }, () => generators[gameId](difficulty))
+  generateUnique(() => generators[gameId](difficulty), count)

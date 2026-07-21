@@ -1,5 +1,5 @@
 // Question generators for the Problem Solving module (quiz-style: route counting).
-import { randInt, pick, shuffle } from '../../utils/helpers'
+import { randInt, pick, shuffle, generateUnique } from '../../utils/helpers'
 
 // ---- 路线探索 (route): count paths on a small grid ----
 // Grid from top-left to bottom-right moving only right/down.
@@ -95,6 +95,33 @@ const LIFE_TEMPLATES = [
       isClock: true,
     }
   },
+  () => {
+    const price = randInt(3, 8), pay = randInt(price + 2, 20)
+    return {
+      text: pick([
+        `一支笔 ${price} 元，付 ${pay} 元，找回几元？`,
+        `玩具 ${price} 元，妈妈给了 ${pay} 元，应找回几元？`,
+      ]),
+      answer: `${pay} - ${price} = ${pay - price}`,
+      hint: '付的钱减去价钱，就是找回的。',
+    }
+  },
+  () => {
+    const front = randInt(2, 5), back = randInt(2, 5)
+    return {
+      text: `排队时前面有 ${front} 人，后面有 ${back} 人，一共几人（含自己）？`,
+      answer: `${front} + ${back} + 1 = ${front + back + 1}`,
+      hint: '别忘了把自己也算进去。',
+    }
+  },
+  () => {
+    const a = randInt(5, 12), b = randInt(2, a - 1), c = randInt(1, 4)
+    return {
+      text: `书架上有 ${a} 本故事书，借走 ${b} 本，又放回 ${c} 本，现在几本？`,
+      answer: `${a} - ${b} + ${c} = ${a - b + c}`,
+      hint: '先减再加，一步一步算。',
+    }
+  },
 ]
 const lifeMath = () => {
   const s = pick(LIFE_TEMPLATES)()
@@ -131,4 +158,4 @@ const lifeMath = () => {
 export const generators = { route, 'life-math': lifeMath }
 
 export const generate = (gameId, difficulty, count) =>
-  Array.from({ length: count }, () => generators[gameId](difficulty))
+  generateUnique(() => generators[gameId](difficulty), count)

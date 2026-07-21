@@ -1,6 +1,6 @@
 // Question generators for the Logic Reasoning module.
 // Uses curated templates to guarantee every puzzle is solvable and unique.
-import { pick, shuffle } from '../../utils/helpers'
+import { pick, shuffle, generateUnique } from '../../utils/helpers'
 
 const ANIMALS = [
   { name: '小猫', emoji: '🐱' }, { name: '小狗', emoji: '🐶' }, { name: '小兔', emoji: '🐰' },
@@ -164,4 +164,4 @@ export const generators = {
 }
 
 export const generate = (gameId, difficulty, count) =>
-  Array.from({ length: count }, () => generators[gameId](difficulty))
+  generateUnique(() => generators[gameId](difficulty), count)

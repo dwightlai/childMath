@@ -2,7 +2,7 @@
 // Focus: flexible computation strategies — splitting, making-round, multiple methods, choosing tools.
 // NOT about speed; about observing, reasoning and trying different approaches.
 
-import { randInt, pick, shuffle } from '../../utils/helpers'
+import { randInt, pick, shuffle, generateUnique } from '../../utils/helpers'
 
 const rangeMax = (difficulty) => (difficulty === 1 ? 10 : difficulty === 2 ? 20 : 100)
 
@@ -29,7 +29,11 @@ const splitCalc = (difficulty) => {
   const options = [...new Set([correct, wrongResult, wrongSplit, wrongBoth])].slice(0, 4)
   while (options.length < 4) options.push(`${a} + ${p} + ${q + options.length} = ${total + 3}`)
   return {
-    question: `${a} + ${b} 怎么拆分计算是对的？`,
+    question: pick([
+      `${a} + ${b} 怎么拆分计算是对的？`,
+      `动脑筋：把 ${b} 拆开再加 ${a}，哪个对？`,
+      `巧算 ${a}+${b}，正确的拆分是？`,
+    ]),
     speakText: `把 ${b} 拆开来算，哪个是对的？`,
     hint: `把 ${b} 拆成 ${p} 和 ${q}，先算 ${a} + ${p}，再加 ${q}。`,
     options: shuffle(options).map((v) => ({ value: v, label: v })),
@@ -106,6 +110,8 @@ const SCENARIOS = [
   { text: '每天读几页书，想记录一周读了多少页。', answer: 'list', why: '用表格记录最清楚。' },
   { text: '从 20 里连续减去 4，减到 0 要减几次？', answer: 'list', why: '列出来不容易乱。' },
   { text: '盒子里有一些球，拿走 3 个还剩 8 个，原来几个？', answer: 'back', why: '从剩下的往回加。' },
+  { text: '左边 5 个，右边比左边多 2 个，一共几个？先怎么想？', answer: 'draw', why: '画出来左右两边再加。' },
+  { text: '15−7 个位不够减，用什么办法？', answer: 'split', why: '破十：把15拆开再减。' },
 ]
 const toolBox = () => {
   const s = pick(SCENARIOS)
@@ -128,4 +134,4 @@ export const generators = {
 }
 
 export const generate = (gameId, difficulty, count) =>
-  Array.from({ length: count }, () => generators[gameId](difficulty))
+  generateUnique(() => generators[gameId](difficulty), count)

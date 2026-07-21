@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { persistStorage } from '../db/persistStorage'
 import {
   performanceScore,
   updateModuleScore,
@@ -119,6 +120,6 @@ export const useAbilityStore = create(
           difficultyProfile: emptyDifficulty(),
         }),
     }),
-    { name: 'childmath-ability' },
+    { name: 'childmath-ability', storage: persistStorage },
   ),
 )

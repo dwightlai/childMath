@@ -69,12 +69,12 @@ function QuestionBankRow() {
         <div>
           <p className="font-bold text-ink text-lg">本地题库</p>
           <p className="text-ink-soft text-sm">
-            AI 出过的题会自动存进来，断网时也能复用 · 共{' '}
+            存在本机 IndexedDB，空间更大 · 共{' '}
             <span className="font-display text-grape-deep">{total}</span> 题
           </p>
           {total > 0 && (
             <p className="text-ink-soft/70 text-xs mt-0.5">
-              🌱简单 {byLevel[1] || 0} · 🌼进阶 {byLevel[2] || 0} · 🌳挑战 {byLevel[3] || 0}
+              低 {byLevel[1] || 0} · 中 {byLevel[2] || 0} · 高 {byLevel[3] || 0}
             </p>
           )}
         </div>

@@ -36,3 +36,42 @@ export const numericOptions = (answer, count = 4, spread = 3) => {
 }
 
 export const clamp = (v, min, max) => Math.min(max, Math.max(min, v))
+
+/** Stable key for deduping questions within a session. */
+export const questionKey = (q) => {
+  if (!q) return ''
+  const parts = [
+    q.question,
+    q.rotate?.shape?.id,
+    q.rotate?.angle,
+    q.countFigure?.id,
+    q.tangram?.id || q.tangram?.hole,
+    q.symmetry?.id,
+    q.blocks ? JSON.stringify(q.blocks) : '',
+    q.seq?.items ? JSON.stringify(q.seq.items) : '',
+    q.countItems ? `${q.countItems.count}:${q.countItems.item}` : '',
+  ]
+  return parts.filter((p) => p !== undefined && p !== '').join('|')
+}
+
+/** Generate `count` questions, skipping duplicates by questionKey. */
+export const generateUnique = (makeOne, count) => {
+  const out = []
+  const seen = new Set()
+  let guard = 0
+  const limit = Math.max(count * 40, 40)
+  while (out.length < count && guard < limit) {
+    guard += 1
+    const q = makeOne()
+    if (!q) continue
+    const key = questionKey(q)
+    if (seen.has(key)) continue
+    seen.add(key)
+    out.push(q)
+  }
+  while (out.length < count) {
+    out.push(makeOne())
+  }
+  return out
+}
+

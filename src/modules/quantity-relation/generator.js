@@ -1,4 +1,4 @@
-import { randInt, pick, shuffle } from '../../utils/helpers'
+import { randInt, pick, shuffle, generateUnique } from '../../utils/helpers'
 
 const NAMES = ['小明', '小红', '小刚', '小丽', '小兔', '小熊', '姐姐', '弟弟']
 const THINGS = [
@@ -177,17 +177,24 @@ const detective = (difficulty) => {
   const irrelevant = pick([
     '今天天气很好', `${pick(NAMES)}穿了红色的衣服`, '他们住在三楼', '现在是星期六', '喜欢唱歌',
   ])
+  const useful = pick([
+    `他有 ${a} 个，又得到 ${b} 个`,
+    `原来 ${a} 个，用掉 ${b} 个`,
+    `左边 ${a} 个，右边 ${b} 个`,
+    `一共 ${a + b} 个，拿走 ${b} 个`,
+  ])
   const ask = pick([
     `想知道"${pick(NAMES)}一共有多少${t.name}"，哪个条件有用？`,
     `算还剩几个${t.name}，需要哪些信息？`,
     `下面哪句话能帮我们算出答案？`,
+    `侦探时间：哪一句里有能用来计算的数字？`,
   ])
   return {
     question: ask,
     speakText: ask,
     hint: '有用的条件里要有数字。',
     options: shuffle([
-      { value: 'useful', label: `他有 ${a} 个，又得到 ${b} 个`, correct: true },
+      { value: 'useful', label: useful, correct: true },
       { value: 'useless1', label: irrelevant, correct: false },
       { value: 'useless2', label: `${pick(NAMES)}喜欢${t.name}`, correct: false },
       { value: 'useless3', label: difficulty >= 2 ? `书包是蓝色的` : `今天星期一`, correct: false },
@@ -243,4 +250,4 @@ export const generators = {
 }
 
 export const generate = (gameId, difficulty, count) =>
-  Array.from({ length: count }, () => generators[gameId](difficulty))
+  generateUnique(() => generators[gameId](difficulty), count)

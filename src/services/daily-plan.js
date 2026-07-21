@@ -1,24 +1,20 @@
-// Daily training plan: AI-generated when available, local fallback otherwise.
-// Cached per day in localStorage so the API is hit at most once per day.
-
 import { generateDailyPlan, isAiReady } from './ai-service'
 import { buildAbilitySummary } from './ability-model'
 import { useAbilityStore } from '../stores/useAbilityStore'
 import { useSettingsStore } from '../stores/useSettingsStore'
 import { MODULES, getModule } from '../data/config'
 import { pick } from '../utils/helpers'
+import { idbGetJson, idbSetJson, idbRemove, idbListKeys } from '../db/idb'
 
 const WEEKDAYS = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
 const CACHE_PREFIX = 'childmath-daily-plan-'
 
-// Weekday rotation: which ability to focus on each day (JS getDay(): 0=Sun ... 6=Sat).
-// Weekends (0, 6) fall back to the weakest module (free choice + reinforcement).
 const WEEKDAY_FOCUS = {
-  1: 'quantity-relation', // 周一 数量关系
-  2: 'spatial',           // 周二 空间思维
-  3: 'pattern',           // 周三 规律发现
-  4: 'logic',             // 周四 逻辑推理
-  5: 'calc-strategy',     // 周五 运算策略
+  1: 'quantity-relation',
+  2: 'spatial',
+  3: 'pattern',
+  4: 'logic',
+  5: 'calc-strategy',
 }
 
 const todayKey = () => {
@@ -26,7 +22,6 @@ const todayKey = () => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
-/** Find the weakest module by ability score. */
 function findWeakest(ability) {
   let weakest = MODULES[0]
   let lowest = Infinity
@@ -40,7 +35,6 @@ function findWeakest(ability) {
   return weakest
 }
 
-/** Build a plan locally: weekday rotation on Mon-Fri, weakest module on weekends. */
 function buildLocalPlan() {
   const ability = useAbilityStore.getState()
   const day = new Date().getDay()
@@ -70,12 +64,10 @@ function buildLocalPlan() {
   }
 }
 
-/** Ensure the AI plan references real modules/games; repair or reject. */
 function validatePlan(plan) {
   if (!plan || !plan.focusModule) return null
   const focus = getModule(plan.focusModule)
   if (!focus) return null
-  // Sanitize each phase's module/game reference.
   const fix = (phase, fallbackModule) => {
     const mod = getModule(phase?.module) || fallbackModule
     const game = mod.games.find((g) => g.id === phase?.game) || pick(mod.games)
@@ -93,37 +85,30 @@ function validatePlan(plan) {
   }
 }
 
-/** Remove daily-plan cache entries older than 7 days. */
-function cleanOldPlans() {
+async function cleanOldPlans() {
   try {
     const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000
-    for (let i = localStorage.length - 1; i >= 0; i--) {
-      const key = localStorage.key(i)
-      if (!key || !key.startsWith(CACHE_PREFIX)) continue
+    const keys = await idbListKeys(CACHE_PREFIX)
+    for (const key of keys) {
       const dateStr = key.slice(CACHE_PREFIX.length)
       const ts = new Date(dateStr).getTime()
-      if (Number.isNaN(ts) || ts < cutoff) localStorage.removeItem(key)
+      if (Number.isNaN(ts) || ts < cutoff) await idbRemove(key)
     }
   } catch {
     /* ignore */
   }
 }
 
-/**
- * Get today's training plan. Uses the day cache, tries AI, falls back to local.
- */
 export async function getDailyPlan() {
   const key = CACHE_PREFIX + todayKey()
 
-  // 1. cache hit
   try {
-    const cached = localStorage.getItem(key)
-    if (cached) return JSON.parse(cached)
+    const cached = await idbGetJson(key)
+    if (cached) return cached
   } catch {
     /* fall through */
   }
 
-  // 2. try AI
   let plan = null
   const settings = useSettingsStore.getState()
   if (isAiReady(settings)) {
@@ -137,12 +122,10 @@ export async function getDailyPlan() {
     plan = validatePlan(raw)
   }
 
-  // 3. local fallback
   if (!plan) plan = buildLocalPlan()
 
-  // 4. cache + cleanup
   try {
-    localStorage.setItem(key, JSON.stringify(plan))
+    await idbSetJson(key, plan)
   } catch {
     /* ignore */
   }

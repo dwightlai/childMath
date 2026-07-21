@@ -1,5 +1,6 @@
-import { create } from 'zustand'
+﻿import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { persistStorage } from '../db/persistStorage'
 
 export const useSettingsStore = create(
   persist(
@@ -7,9 +8,8 @@ export const useSettingsStore = create(
       soundEnabled: true,
       musicEnabled: false,
       speechEnabled: true,
-      difficulty: 1, // 1-3
-      sessionMinutes: 15, // 15 or 20
-      // AI adaptive question generation
+      difficulty: 1,
+      sessionMinutes: 15,
       aiEnabled: false,
       apiBaseUrl: 'https://api.deepseek.com/v1',
       apiKey: '',
@@ -24,6 +24,6 @@ export const useSettingsStore = create(
       setApiKey: (v) => set({ apiKey: v }),
       setModelName: (v) => set({ modelName: v }),
     }),
-    { name: 'childmath-settings' },
+    { name: 'childmath-settings', storage: persistStorage },
   ),
 )
