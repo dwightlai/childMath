@@ -150,7 +150,7 @@ function SymmetryVisual({ half }) {
     <div className="flex justify-center bg-white rounded-2xl border-2 border-ink/10 p-4">
       <div className="flex flex-col items-center gap-1">
         <PixelGrid cells={half} showAxis color="#B388EB" />
-        <span className="text-ink-soft text-sm">这是图形的一半（红线是对称轴）</span>
+        <span className="text-ink-soft text-sm">左边是一半（红线是对称轴），选出补全后的图</span>
       </div>
     </div>
   )

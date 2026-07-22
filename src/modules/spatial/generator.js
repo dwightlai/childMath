@@ -63,30 +63,65 @@ const countShapes = (difficulty) => {
   }
 }
 
+const cellsKey = (cells) =>
+  [...new Set((cells || []).map(([r, c]) => `${r},${c}`))].sort().join('|')
+
 const HALF_FIGURES = [
-  { id: 'bar', cells: [[1, 0], [1, 1], [1, 2], [1, 3]] },
-  { id: 'L', cells: [[0, 0], [1, 0], [1, 1], [1, 2]] },
-  { id: 'diamond', cells: [[0, 1], [1, 0], [1, 1], [1, 2], [0, 3]] },
-  { id: 'zig', cells: [[1, 0], [1, 1], [0, 1], [0, 2], [1, 2], [1, 3]] },
-  { id: 'T', cells: [[0, 0], [0, 1], [1, 1], [0, 2]] },
-  { id: 'U', cells: [[0, 0], [1, 0], [1, 1], [1, 2], [0, 2]] },
-  { id: 'stair', cells: [[0, 0], [0, 1], [1, 1], [1, 2]] },
-  { id: 'plus', cells: [[1, 0], [0, 1], [1, 1], [1, 2]] },
+  { id: 'bar', cells: [[1, 0], [1, 1]] },
+  { id: 'L', cells: [[0, 0], [1, 0], [1, 1]] },
+  { id: 'block', cells: [[0, 0], [0, 1], [1, 0], [1, 1]] },
+  { id: 'zig', cells: [[0, 1], [1, 0], [1, 1]] },
+  { id: 'T', cells: [[0, 0], [0, 1], [1, 1]] },
+  { id: 'U', cells: [[0, 0], [1, 0], [2, 0], [2, 1]] },
+  { id: 'stair', cells: [[0, 0], [1, 0], [1, 1], [2, 1]] },
+  { id: 'plus', cells: [[0, 1], [1, 0], [1, 1], [2, 1]] },
 ]
+
 const symmetry = (difficulty) => {
   const pool = difficulty === 1 ? HALF_FIGURES.slice(0, 4) : HALF_FIGURES
   const fig = pick(pool)
-  const half = fig.cells
+  const half = fig.cells.filter(([r, c]) => r >= 0 && r < 4 && c >= 0 && c <= 1)
   const mirrored = half.map(([r, c]) => [r, 3 - c])
   const correctCells = [...half, ...mirrored]
-  const variants = [
-    [...half, ...half.map(([r, c]) => [r, 3 - c === 3 ? 2 : 3])],
-    [...half, ...mirrored.slice(0, -1)],
-    [...half, ...mirrored.map(([r, c]) => [(r + 1) % 4, c])],
+  const correctKey = cellsKey(correctCells)
+
+  const wrongMakers = [
+    () => [...half],
+    () => [...half, ...mirrored.slice(0, Math.max(1, mirrored.length - 1))],
+    () => [...half, ...mirrored, [(half[0][0] + 2) % 4, half[0][1]]],
+    () => [...half, ...mirrored.map(([r, c]) => [(r + 1) % 4, c])],
+    () => [...half, ...mirrored.map(([r, c]) => [r === 0 ? 3 : r - 1, c])],
+    () => [...half, ...half.map(([r, c]) => [(r + 1) % 4, 3 - c])],
+    () => [...half, ...mirrored.map(([r, c]) => [r, c === 2 ? 3 : 2])],
+    () => {
+      const extra = half.map(([r, c]) => [r, 3 - c])
+      return [...half, ...extra.slice(1), [(half[0][0] + 1) % 4, 3]]
+    },
   ]
+
+  const wrongs = []
+  const seen = new Set([correctKey])
+  for (const make of shuffle(wrongMakers)) {
+    const cells = make().filter(([r, c]) => r >= 0 && r < 4 && c >= 0 && c < 4)
+    const key = cellsKey(cells)
+    if (!key || seen.has(key)) continue
+    seen.add(key)
+    wrongs.push(cells)
+    if (wrongs.length >= 3) break
+  }
+  while (wrongs.length < 3) {
+    const r = randInt(0, 3)
+    const cells = [...correctCells, [r, 0], [r, 3]].filter(([rr, cc], i, arr) =>
+      arr.findIndex((x) => x[0] === rr && x[1] === cc) === i)
+    const key = cellsKey(cells)
+    if (seen.has(key)) continue
+    seen.add(key)
+    wrongs.push(cells)
+  }
+
   const options = shuffle([
     { value: 'correct', cells: correctCells, correct: true },
-    ...variants.slice(0, 3).map((cells, i) => ({ value: `w${i}`, cells, correct: false })),
+    ...wrongs.slice(0, 3).map((cells, i) => ({ value: `w${i}`, cells, correct: false })),
   ])
   return {
     question: pick([
