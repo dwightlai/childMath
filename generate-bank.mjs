@@ -220,16 +220,63 @@ for (const lv of [1, 2, 3]) {
     ], detAns, '有数字、且能对上问题的才有用'))
 
     const s2 = a + b
-    ms.push(q(pick([
-      `${a}+${b}=${s2}，哪个想法也对？`,
-      `算 ${a} 加 ${b}，换个说法也对的是？`,
-      `${a}+${b}=${s2}，另一种正确算法是？`,
-    ]), [
-      { value: `${b}+${a}=${s2}`, label: `${b}+${a}=${s2}` },
-      { value: `${a}+${b}=${s2 + 1}`, label: `${a}+${b}=${s2 + 1}` },
-      { value: `${a}-${b}=${s2}`, label: `${a}-${b}=${s2}` },
-      { value: `${s2}+${a}=${b}`, label: `${s2}+${a}=${b}` },
-    ], `${b}+${a}=${s2}`, '加法交换位置结果不变'))
+    const msMode = i % 4
+    if (msMode === 0) {
+      ms.push(q(
+        `${a}+${b}=${s2}，交换加数位置，哪个也对？`,
+        [
+          { value: `${b}+${a}=${s2}`, label: `${b}+${a}=${s2}` },
+          { value: `${a}+${b}=${s2 + 1}`, label: `${a}+${b}=${s2 + 1}` },
+          { value: `${a}-${b}=${s2}`, label: `${a}-${b}=${s2}` },
+          { value: `${s2}+${a}=${b}`, label: `${s2}+${a}=${b}` },
+        ],
+        `${b}+${a}=${s2}`,
+        '加数换位置，得数不变',
+      ))
+    } else if (msMode === 1) {
+      const b1 = randInt(1, Math.max(1, b - 1))
+      const b2 = b - b1
+      const ok = `${a}+${b1}+${b2}=${s2}`
+      ms.push(q(
+        `${a}+${b}=${s2}，把 ${b} 拆开再加，哪个也对？`,
+        [
+          { value: ok, label: ok },
+          { value: `${a}+${b1}+${b2}=${s2 + 1}`, label: `${a}+${b1}+${b2}=${s2 + 1}` },
+          { value: `${a}+${b1 + 1}+${b2}=${s2}`, label: `${a}+${b1 + 1}+${b2}=${s2}` },
+          { value: `${a}-${b1}-${b2}=${s2}`, label: `${a}-${b1}-${b2}=${s2}` },
+        ],
+        ok,
+        `把 ${b} 拆成 ${b1} 和 ${b2}`,
+      ))
+    } else if (msMode === 2) {
+      const total = s2
+      let c = randInt(1, total - 1)
+      if (c === a) c = c === 1 ? 2 : c - 1
+      const d = total - c
+      ms.push(q(
+        `${a}+${b}=${total}，得数也是 ${total} 的是？`,
+        [
+          { value: `${c}+${d}=${total}`, label: `${c}+${d}=${total}` },
+          { value: `${c}+${d}=${total + 1}`, label: `${c}+${d}=${total + 1}` },
+          { value: `${a}+${b}=${total + 1}`, label: `${a}+${b}=${total + 1}` },
+          { value: `${a}-${b}=${total}`, label: `${a}-${b}=${total}` },
+        ],
+        `${c}+${d}=${total}`,
+        '得数一样就可以',
+      ))
+    } else {
+      ms.push(q(
+        `${s2}−${a}=${b}，对应的加法是？`,
+        [
+          { value: `${a}+${b}=${s2}`, label: `${a}+${b}=${s2}` },
+          { value: `${a}+${b}=${s2 + 1}`, label: `${a}+${b}=${s2 + 1}` },
+          { value: `${s2}+${a}=${b}`, label: `${s2}+${a}=${b}` },
+          { value: `${a}-${b}=${s2}`, label: `${a}-${b}=${s2}` },
+        ],
+        `${a}+${b}=${s2}`,
+        '减下来的加回去就是原来的数',
+      ))
+    }
   }
   add('quantity-relation', 'story-theater', lv, st)
   add('quantity-relation', 'arrange', lv, ar)
@@ -246,12 +293,34 @@ for (const lv of [1, 2, 3]) {
       const a = randInt(2, 9), b = randInt(2, 9), s = a + b
       sc.push(q(pick([`${a}+${b}=？可以怎么想？`, `心算：${a} 加 ${b} 等于？`]), numOpts(s), s, '可以凑十再算'))
       mr.push(q(`${a}+${b}：先凑十再算，得？`, numOpts(s), s, '凑成10再加剩下的'))
-      mm.push(q(`${a}+${b}=${s}，另一种也对的是？`, [
-        { value: `${b}+${a}`, label: `${b}+${a}` },
-        { value: `${a}-${b}`, label: `${a}-${b}` },
-        { value: `${s}+1`, label: `${s}+1` },
-        { value: `${a}+${b}+1`, label: `${a}+${b}+1` },
-      ], `${b}+${a}`, '换个顺序试试'))
+      const mmMode = i % 3
+      if (mmMode === 0) {
+        mm.push(q(`${a}+${b}=${s}，交换顺序也对的是？`, [
+          { value: `${b}+${a}`, label: `${b}+${a}` },
+          { value: `${a}-${b}`, label: `${a}-${b}` },
+          { value: `${s}+1`, label: `${s}+1` },
+          { value: `${a}+${b}+1`, label: `${a}+${b}+1` },
+        ], `${b}+${a}`, '换个顺序试试'))
+      } else if (mmMode === 1 && b >= 2) {
+        const b1 = randInt(1, b - 1), b2 = b - b1
+        const ok = `${a}+${b1}+${b2}`
+        mm.push(q(`${a}+${b} 用拆分，哪个也对？`, [
+          { value: ok, label: `${ok}=${s}` },
+          { value: 'w1', label: `${a}+${b1}+${b2}=${s + 1}` },
+          { value: 'w2', label: `${a}-${b}=${s}` },
+          { value: 'w3', label: `${a}+${b1 + 1}+${b2}=${s}` },
+        ], ok, `把 ${b} 拆成 ${b1} 和 ${b2}`))
+      } else {
+        let c = randInt(1, s - 1)
+        if (c === a) c = c === 1 ? 2 : c - 1
+        const d = s - c
+        mm.push(q(`${a}+${b}=${s}，得数相同的是？`, [
+          { value: `${c}+${d}`, label: `${c}+${d}=${s}` },
+          { value: 'w1', label: `${c}+${d}=${s + 1}` },
+          { value: 'w2', label: `${a}+${b}=${s - 1}` },
+          { value: 'w3', label: `${a}-${b}=${s}` },
+        ], `${c}+${d}`, '得数一样就可以'))
+      }
     } else if (lv === 2) {
       // 20以内进位加 / 退位减
       if (i % 2 === 0) {
@@ -269,13 +338,33 @@ for (const lv of [1, 2, 3]) {
         ]), numOpts(d), d, '向十位借 1 当 10 再减'))
         mr.push(q(`${a}−${b} 破十后得？`, numOpts(d), d, '借一当十'))
       }
-      const a2 = randInt(11, 20), b2 = randInt(2, 9), s2 = a2 + b2
-      mm.push(q(`${a2}+${b2}，哪种想法更合适？`, [
-        { value: '拆分凑十', label: '把一个数拆开凑十' },
-        { value: '瞎猜', label: '随便选一个答案' },
-        { value: '只加个位', label: '只加个位，不管十位' },
-        { value: '倒着减', label: '改成减法来算' },
-      ], '拆分凑十', '满十进位时拆分最清楚'))
+      if (i % 3 === 0) {
+        const a2 = randInt(6, 9), b2 = randInt(10 - a2 + 1, 9), s2 = a2 + b2
+        const need = 10 - a2, rest = b2 - need
+        const ok = `${a2}+${need}+${rest}=${s2}`
+        mm.push(q(`${a2}+${b2} 想凑十，哪个也对？`, [
+          { value: ok, label: ok },
+          { value: 'w1', label: `${a2}+${need}+${rest}=${s2 + 1}` },
+          { value: 'w2', label: `${a2}+${b2}=${s2 - 1}` },
+          { value: 'w3', label: `${a2}-${need}+${rest}=${s2}` },
+        ], ok, `先凑成 10 再加 ${rest}`))
+      } else if (i % 3 === 1) {
+        const a2 = randInt(5, 9)
+        const ok = `${a2}+${a2}+1=${a2 + a2 + 1}`
+        mm.push(q(`${a2}+${a2 + 1} 用加倍想，哪个也对？`, [
+          { value: ok, label: ok },
+          { value: 'w1', label: `${a2}+${a2}=${a2 + a2 + 1}` },
+          { value: 'w2', label: `${a2}+${a2}-1=${a2 + a2 + 1}` },
+          { value: 'w3', label: `${a2 + 1}+${a2 + 1}=${a2 + a2 + 1}` },
+        ], ok, `${a2}+${a2} 再加 1`))
+      } else {
+        mm.push(q(`${randInt(11, 18)}+${randInt(3, 9)}，哪种想法更合适？`, [
+          { value: '拆分凑十', label: '把一个数拆开凑十' },
+          { value: '瞎猜', label: '随便选一个答案' },
+          { value: '只加个位', label: '只加个位，不管十位' },
+          { value: '倒着减', label: '改成减法来算' },
+        ], '拆分凑十', '满十进位时拆分最清楚'))
+      }
     } else {
       const a = randInt(25, 80), b = randInt(3, 19), s = a + b
       sc.push(q(`${a}+${b}=？（注意进位）`, numOpts(s, 5), s, '个位相加，满十进 1'))
@@ -286,12 +375,23 @@ for (const lv of [1, 2, 3]) {
         const sp = 10 - rem
         mr.push(q(`${a}+${b}：先加 ${sp} 凑成整十，结果？`, numOpts(s, 5), s, '凑整十更好算'))
       }
-      mm.push(q(`${a}+${b}=${s}，更简便的想法是？`, [
-        { value: '先加整十再加个位', label: '先加整十再加个位' },
-        { value: '只看个位', label: '只看个位' },
-        { value: '从大减到小', label: '从大减到小' },
-        { value: '不用算', label: '不用计算直接猜' },
-      ], '先加整十再加个位', '把大数拆开'))
+      if (i % 2 === 0) {
+        const tens = a - (a % 10), ones = a % 10
+        const ok = `${tens}+${b}+${ones}=${s}`
+        mm.push(q(`${a}+${b}=${s}，更简便的算法是？`, [
+          { value: ok, label: ok },
+          { value: 'w1', label: `${tens}+${b}+${ones}=${s + 1}` },
+          { value: 'w2', label: `${ones}+${b}=${s}` },
+          { value: 'w3', label: `${a}-${b}=${s}` },
+        ], ok, '先加整十再加个位'))
+      } else {
+        mm.push(q(`${a}+${b}=${s}，更简便的想法是？`, [
+          { value: '先加整十再加个位', label: '先加整十再加个位' },
+          { value: '只看个位', label: '只看个位' },
+          { value: '从大减到小', label: '从大减到小' },
+          { value: '不用算', label: '不用计算直接猜' },
+        ], '先加整十再加个位', '把大数拆开'))
+      }
     }
     const tools = ['画图', '拆分', '列表', '倒推']
     const scenes = [
@@ -650,7 +750,7 @@ for (const lv of [1, 2, 3]) {
 }
 
 mkdirSync('public', { recursive: true })
-const BANK_VERSION = 6
+const BANK_VERSION = 7
 const payload = { version: BANK_VERSION, bank }
 writeFileSync('public/question-bank-local.json', JSON.stringify(payload), 'utf-8')
 let total = 0

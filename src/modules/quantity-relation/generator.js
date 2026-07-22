@@ -224,33 +224,141 @@ const detective = (difficulty) => {
 }
 
 const multiSolve = (difficulty) => {
-  const a = randInt(3, difficulty === 1 ? 8 : 20)
-  const b = randInt(2, Math.min(7, a - 1))
-  const total = a + b
-  const mode = pick(['commute', 'inverse', 'same'])
-  let question, correctLabel, speak
-  if (mode === 'inverse' && difficulty >= 2) {
-    question = `${total} - ${a} = ${b}，哪个也是对的？`
-    correctLabel = `${b} + ${a} = ${total}`
-    speak = '减法和加法可以互相反过来想'
-  } else if (mode === 'same') {
-    question = `${a} + ${b} = ${total}，怎样算也能得到 ${total}？`
-    correctLabel = `${b} + ${a} = ${total}`
-    speak = `怎样算等于${total}`
-  } else {
-    question = pick([
-      `${a} + ${b} 可以怎么算？下面哪个算式是对的？`,
-      `算 ${a} 加 ${b}，哪个想法也对？`,
-    ])
-    correctLabel = `${b} + ${a} = ${total}`
-    speak = '加法交换位置结果一样吗？'
+  const hi = difficulty === 1 ? 10 : difficulty === 2 ? 20 : 50
+  const modes = difficulty === 1
+    ? ['commute', 'split', 'same-sum', 'inverse']
+    : ['commute', 'split', 'same-sum', 'inverse', 'make-ten', 'near-double']
+  const mode = pick(modes)
+
+  if (mode === 'split') {
+    const a = randInt(3, Math.min(12, hi))
+    const b = randInt(3, Math.min(9, hi))
+    const total = a + b
+    const b1 = randInt(1, b - 1)
+    const b2 = b - b1
+    const correct = `${a} + ${b1} + ${b2} = ${total}`
+    return {
+      question: pick([
+        `${a} + ${b} = ${total}，把 ${b} 拆开再加，哪个也对？`,
+        `算 ${a}+${b}，用拆分的方法，正确的是？`,
+      ]),
+      speakText: '把一个数拆开再加，哪个也对？',
+      hint: `把 ${b} 拆成 ${b1} 和 ${b2}，合起来还是 ${b}。`,
+      options: shuffle([
+        { value: 'c', label: correct, correct: true },
+        { value: 'w1', label: `${a} + ${b1} + ${b2} = ${total + 1}`, correct: false },
+        { value: 'w2', label: `${a} + ${b1 + 1} + ${b2} = ${total}`, correct: false },
+        { value: 'w3', label: `${a} - ${b1} - ${b2} = ${total}`, correct: false },
+      ]),
+      isCorrect: (opt) => opt.correct,
+      columns: 2,
+    }
   }
+
+  if (mode === 'same-sum') {
+    const total = randInt(difficulty === 1 ? 6 : 10, hi)
+    const a = randInt(2, total - 2)
+    const b = total - a
+    let c = randInt(1, total - 1)
+    if (c === a) c = (c % (total - 1)) + 1
+    const d = total - c
+    return {
+      question: pick([
+        `${a} + ${b} = ${total}，下面哪个算式结果也是 ${total}？`,
+        `和 ${a}+${b} 得数相同的是？`,
+      ]),
+      speakText: `哪个算式也等于${total}？`,
+      hint: '得数一样就行，加数可以不一样。',
+      options: shuffle([
+        { value: 'c', label: `${c} + ${d} = ${total}`, correct: true },
+        { value: 'w1', label: `${a} + ${b} = ${total + 1}`, correct: false },
+        { value: 'w2', label: `${c} + ${d} = ${total + 1}`, correct: false },
+        { value: 'w3', label: `${a} - ${b} = ${total}`, correct: false },
+      ]),
+      isCorrect: (opt) => opt.correct,
+      columns: 2,
+    }
+  }
+
+  if (mode === 'inverse') {
+    const total = randInt(difficulty === 1 ? 6 : 10, hi)
+    const a = randInt(2, total - 1)
+    const b = total - a
+    return {
+      question: pick([
+        `${total} − ${a} = ${b}，哪个加法也对？`,
+        `已知 ${total}−${a}=${b}，对应的加法是？`,
+      ]),
+      speakText: '减法和加法可以互相反过来想',
+      hint: '减下来的和剩下的，加起来就是原来的数。',
+      options: shuffle([
+        { value: 'c', label: `${a} + ${b} = ${total}`, correct: true },
+        { value: 'w1', label: `${a} + ${b} = ${total + 1}`, correct: false },
+        { value: 'w2', label: `${total} + ${a} = ${b}`, correct: false },
+        { value: 'w3', label: `${a} - ${b} = ${total}`, correct: false },
+      ]),
+      isCorrect: (opt) => opt.correct,
+      columns: 2,
+    }
+  }
+
+  if (mode === 'make-ten') {
+    const a = randInt(6, 9)
+    const b = randInt(10 - a + 1, 9)
+    const total = a + b
+    const need = 10 - a
+    const rest = b - need
+    const correct = `${a} + ${need} + ${rest} = ${total}`
+    return {
+      question: `${a}+${b} 想凑十，哪种拆法也对？`,
+      speakText: '凑十再算，哪个也对？',
+      hint: `先把 ${b} 拆出 ${need}，凑成 10，再加 ${rest}。`,
+      options: shuffle([
+        { value: 'c', label: correct, correct: true },
+        { value: 'w1', label: `${a} + ${need + 1} + ${Math.max(0, rest - 1)} = ${total}`, correct: false },
+        { value: 'w2', label: `${a} + ${b} = ${total - 1}`, correct: false },
+        { value: 'w3', label: `${a} - ${need} + ${rest} = ${total}`, correct: false },
+      ]),
+      isCorrect: (opt) => opt.correct,
+      columns: 2,
+    }
+  }
+
+  if (mode === 'near-double') {
+    const a = randInt(4, difficulty === 1 ? 8 : 12)
+    const total = a + (a + 1)
+    const correct = `${a} + ${a} + 1 = ${total}`
+    return {
+      question: pick([
+        `${a}+${a + 1}=${total}，用“加倍再加 1”想，哪个也对？`,
+        `算 ${a} 加 ${a + 1}，靠近加倍的想法是？`,
+      ]),
+      speakText: '用加倍的方法想，哪个也对？',
+      hint: `${a}+${a} 再加 1，就是 ${a}+${a + 1}。`,
+      options: shuffle([
+        { value: 'c', label: correct, correct: true },
+        { value: 'w1', label: `${a} + ${a} - 1 = ${total}`, correct: false },
+        { value: 'w2', label: `${a} + ${a} = ${total}`, correct: false },
+        { value: 'w3', label: `${a + 1} + ${a + 1} = ${total}`, correct: false },
+      ]),
+      isCorrect: (opt) => opt.correct,
+      columns: 2,
+    }
+  }
+
+  const a = randInt(3, hi)
+  let b = randInt(2, Math.min(9, hi))
+  if (b === a) b = a + 1
+  const total = a + b
   return {
-    question,
-    speakText: speak,
-    hint: '加法交换两个数，结果不变；减法和加法是好朋友。',
+    question: pick([
+      `${a} + ${b} = ${total}，交换加数位置，哪个也对？`,
+      `算 ${a} 加 ${b}，换个顺序也对的是？`,
+    ]),
+    speakText: '加法交换位置结果一样吗？',
+    hint: '两个加数换位置，得数不变。',
     options: shuffle([
-      { value: 'c', label: correctLabel, correct: true },
+      { value: 'c', label: `${b} + ${a} = ${total}`, correct: true },
       { value: 'w1', label: `${a} + ${b} = ${total + 1}`, correct: false },
       { value: 'w2', label: `${a} - ${b} = ${total}`, correct: false },
       { value: 'w3', label: `${total} + ${a} = ${b}`, correct: false },

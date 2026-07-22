@@ -70,23 +70,149 @@ const makeRound = (difficulty) => {
 // 一题多解: pick another correct way to compute the same problem.
 const multiMethod = (difficulty) => {
   const max = rangeMax(difficulty)
+  const modes = difficulty === 1
+    ? ['split', 'commute', 'same-sum']
+    : difficulty === 2
+      ? ['split', 'commute', 'make-ten', 'near-double', 'strategy']
+      : ['split', 'make-ten', 'near-double', 'strategy', 'tens']
+  const mode = pick(modes)
+
+  if (mode === 'strategy') {
+    const items = [
+      { q: `${randInt(11, 18)}+${randInt(3, 9)}，哪种想法更合适？`, a: '拆分凑十', opts: ['拆分凑十', '只加个位', '随便猜', '改成减法'] },
+      { q: `${randInt(12, 19)}−${randInt(5, 9)}，个位不够减，怎么想？`, a: '破十再减', opts: ['破十再减', '直接个位相减', '不用算', '先加再减'] },
+      { q: '8+5 怎样算更快？', a: '拆成凑十', opts: ['拆成凑十', '从 1 数到 13', '只看个位', '改成减法'] },
+    ]
+    const s = pick(items)
+    return {
+      question: s.q,
+      speakText: '哪种想法更合适？',
+      hint: '想一想哪一种最清楚、不容易错。',
+      options: shuffle(s.opts.map((x) => ({ value: x, label: x, correct: x === s.a }))),
+      isCorrect: (opt) => opt.correct,
+      columns: 2,
+    }
+  }
+
+  if (mode === 'make-ten') {
+    const a = randInt(6, 9)
+    const b = randInt(10 - a + 1, 9)
+    const total = a + b
+    const need = 10 - a
+    const rest = b - need
+    const correct = `${a} + ${need} + ${rest} = ${total}`
+    return {
+      question: `${a}+${b} 用凑十法，哪个也对？`,
+      speakText: '用凑十法，哪个也对？',
+      hint: `先凑 ${a}+${need}=10，再加 ${rest}。`,
+      options: shuffle([
+        { value: correct, label: correct, correct: true },
+        { value: 'w1', label: `${a} + ${need} + ${rest} = ${total + 1}`, correct: false },
+        { value: 'w2', label: `${a} + ${b} = ${total - 1}`, correct: false },
+        { value: 'w3', label: `${a} - ${need} + ${rest} = ${total}`, correct: false },
+      ]),
+      isCorrect: (opt) => opt.correct,
+      columns: 2,
+    }
+  }
+
+  if (mode === 'near-double') {
+    const a = randInt(5, Math.min(12, Math.floor(max / 2) + 4))
+    const total = a + a + 1
+    const correct = `${a} + ${a} + 1 = ${total}`
+    return {
+      question: `${a}+${a + 1}，用加倍的想法，哪个也对？`,
+      speakText: '用加倍的想法，哪个也对？',
+      hint: `${a}+${a} 再加 1。`,
+      options: shuffle([
+        { value: correct, label: correct, correct: true },
+        { value: 'w1', label: `${a} + ${a} = ${total}`, correct: false },
+        { value: 'w2', label: `${a} + ${a} - 1 = ${total}`, correct: false },
+        { value: 'w3', label: `${a + 1} + ${a + 1} = ${total}`, correct: false },
+      ]),
+      isCorrect: (opt) => opt.correct,
+      columns: 2,
+    }
+  }
+
+  if (mode === 'tens') {
+    const tens = randInt(2, 7) * 10
+    const ones = randInt(3, 9)
+    const b = randInt(4, 15)
+    const total = tens + ones + b
+    const correct = `${tens} + ${b} + ${ones} = ${total}`
+    return {
+      question: `${tens + ones}+${b}=${total}，更简便的算法是？`,
+      speakText: '更简便的算法是哪个？',
+      hint: '先把整十算清楚，再加个位。',
+      options: shuffle([
+        { value: correct, label: correct, correct: true },
+        { value: 'w1', label: `${tens} + ${b} + ${ones} = ${total + 1}`, correct: false },
+        { value: 'w2', label: `${ones} + ${b} = ${total}`, correct: false },
+        { value: 'w3', label: `${tens + ones} - ${b} = ${total}`, correct: false },
+      ]),
+      isCorrect: (opt) => opt.correct,
+      columns: 2,
+    }
+  }
+
+  if (mode === 'commute') {
+    const a = randInt(3, Math.max(4, Math.floor(max * 0.6)))
+    const b = randInt(2, Math.max(3, max - a))
+    const total = a + b
+    return {
+      question: `${a}+${b}=${total}，交换顺序也对的是？`,
+      speakText: '交换顺序哪个也对？',
+      hint: '加数换位置，得数不变。',
+      options: shuffle([
+        { value: 'c', label: `${b}+${a}=${total}`, correct: true },
+        { value: 'w1', label: `${a}+${b}=${total + 1}`, correct: false },
+        { value: 'w2', label: `${a}-${b}=${total}`, correct: false },
+        { value: 'w3', label: `${total}+${a}=${b}`, correct: false },
+      ]),
+      isCorrect: (opt) => opt.correct,
+      columns: 2,
+    }
+  }
+
+  if (mode === 'same-sum') {
+    const total = randInt(difficulty === 1 ? 8 : 12, max)
+    const a = randInt(2, total - 2)
+    const b = total - a
+    let c = randInt(1, total - 1)
+    if (c === a) c = c === 1 ? 2 : c - 1
+    const d = total - c
+    return {
+      question: `${a}+${b}=${total}，得数相同的另一道是？`,
+      speakText: '哪个得数也一样？',
+      hint: '得数相同就可以。',
+      options: shuffle([
+        { value: 'c', label: `${c}+${d}=${total}`, correct: true },
+        { value: 'w1', label: `${c}+${d}=${total + 1}`, correct: false },
+        { value: 'w2', label: `${a}+${b}=${total - 1}`, correct: false },
+        { value: 'w3', label: `${a}-${b}=${total}`, correct: false },
+      ]),
+      isCorrect: (opt) => opt.correct,
+      columns: 2,
+    }
+  }
+
   const a = randInt(3, Math.max(4, Math.floor(max * 0.6)))
   const b = randInt(2, Math.max(3, max - a))
   const total = a + b
   const b1 = randInt(1, b - 1)
   const b2 = b - b1
   const correct = `${a} + ${b1} + ${b2} = ${total}`
-  const options = shuffle([
-    { value: correct, label: correct, correct: true },
-    { value: 'w1', label: `${a} + ${b1} + ${b2} = ${total + 1}`, correct: false },
-    { value: 'w2', label: `${a} + ${b} = ${total - 1}`, correct: false },
-    { value: 'w3', label: `${a} + ${b1 + 1} + ${b2} = ${total}`, correct: false },
-  ])
   return {
-    question: `${a} + ${b} = ？，下面哪种算法也是对的？`,
-    speakText: `同一道题可以有不同的算法，哪个也是对的？`,
-    hint: `把 ${b} 拆成 ${b1} 和 ${b2}，合起来还是 ${b}，结果不变。`,
-    options,
+    question: `${a} + ${b} = ？，用拆分的算法，哪个也对？`,
+    speakText: '用拆分的算法，哪个也对？',
+    hint: `把 ${b} 拆成 ${b1} 和 ${b2}。`,
+    options: shuffle([
+      { value: correct, label: correct, correct: true },
+      { value: 'w1', label: `${a} + ${b1} + ${b2} = ${total + 1}`, correct: false },
+      { value: 'w2', label: `${a} + ${b} = ${total - 1}`, correct: false },
+      { value: 'w3', label: `${a} + ${b1 + 1} + ${b2} = ${total}`, correct: false },
+    ]),
     isCorrect: (opt) => opt.correct,
     columns: 2,
   }
