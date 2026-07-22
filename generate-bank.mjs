@@ -415,16 +415,31 @@ for (const lv of [1, 2, 3]) {
 for (const lv of [1, 2, 3]) {
   const sq = [], oo = [], ds = [], sp = [], jd = []
   for (let i = 0; i < N; i++) {
-    const start = randInt(1, lv === 1 ? 8 : 20)
-    const st = lv === 1 ? pick([1, 2]) : lv === 2 ? pick([2, 3]) : pick([2, 3, 5, -1, -2])
-    const seq = Array.from({ length: 4 }, (_, j) => start + st * j)
-    const ans = seq[3] + st
+    const start = randInt(lv === 1 ? 2 : 1, lv === 1 ? 10 : 20)
+    const kind = lv === 1 ? pick([1, 2, -1, 'alt']) : lv === 2 ? pick([2, 3, -1, -2, 'alt']) : pick([2, 3, 5, -2, -3, 'alt'])
+    let seq, ans, hintSq
+    if (kind === 'alt') {
+      const b = start + pick([1, 2, 3])
+      seq = [start, b, start, b]
+      ans = start
+      hintSq = '两个数轮流出现'
+    } else {
+      let built = Array.from({ length: 4 }, (_, j) => start + kind * j)
+      if (built.some((n) => n < 1)) {
+        const s = Math.abs(kind)
+        const base = s * 4 + randInt(2, 8)
+        built = Array.from({ length: 4 }, (_, j) => base - s * j)
+      }
+      seq = built
+      const step2 = seq[1] - seq[0]
+      ans = seq[3] + step2
+      hintSq = `每次${step2 > 0 ? '+' : ''}${step2}`
+    }
     sq.push(q(pick([
       `找规律，问号里应该填几：${seq.join('、')}、？`,
       `小火车开来了：${seq.join(' → ')} → ？下一站是几？`,
-      `每次${st > 0 ? '加' : '减'} ${Math.abs(st)}，下一个数是几？`,
       `接着往下写：${seq.join('、')}、？`,
-    ]), numOpts(ans), ans, `每次${st > 0 ? '+' : ''}${st}`))
+    ]), numOpts(ans), ans, hintSq))
 
     const pools = [
       ['苹果', '香蕉', '橘子', '汽车'],
@@ -460,12 +475,34 @@ for (const lv of [1, 2, 3]) {
       `看规律，下一个图形填什么？${shownPat}`,
     ]), shuffle(spOpts).map((x) => ({ value: x, label: x })), ansSp, '看看它怎么重复'))
 
-    const x = randInt(2, lv === 1 ? 12 : 40), y = randInt(2, 12)
-    const shown = x + y + pick([-1, 0, 1, lv >= 2 ? 10 : 0])
-    jd.push(q(pick([
-      `有人说 ${x} + ${y} = ${shown}，他说得对吗？`,
-      `${x} + ${y} 等于 ${shown} 吗？请你当小老师判一判。`,
-    ]), [{ value: '对', label: '对' }, { value: '错', label: '错' }], shown === x + y ? '对' : '错', `${x}+${y}=${x + y}`))
+    const jKind = lv === 1 ? pick([2, 3, -1, 'alt']) : pick([2, 3, -1, -2, 'alt'])
+    const jStart = randInt(2, 12)
+    let jSeq, jNext
+    if (jKind === 'alt') {
+      const b = jStart + pick([1, 2, 3])
+      jSeq = [jStart, b, jStart, b]
+      jNext = jStart
+    } else {
+      let built = Array.from({ length: 4 }, (_, j) => jStart + jKind * j)
+      if (built.some((n) => n < 1)) {
+        const s = Math.abs(jKind)
+        const base = s * 4 + randInt(2, 8)
+        built = Array.from({ length: 4 }, (_, j) => base - s * j)
+      }
+      jSeq = built
+      jNext = jSeq[3] + (jSeq[1] - jSeq[0])
+    }
+    const jRight = i % 2 === 0
+    const jShown = jRight ? jNext : jNext + pick([1, 2, 3].filter((d) => jNext + d > 0))
+    jd.push({
+      ...q(
+        `有人接：${jSeq.join('、')}、${jShown}。他接得对吗？`,
+        [{ value: '对', label: '✓ 对' }, { value: '错', label: '✗ 不对' }],
+        jRight ? '对' : '错',
+        '先找出规律再判断',
+      ),
+      seq: { items: [...jSeq, jShown], highlightLast: true, isNumber: true },
+    })
   }
   add('pattern', 'sequence', lv, sq)
   add('pattern', 'odd-one-out', lv, oo)
@@ -750,7 +787,7 @@ for (const lv of [1, 2, 3]) {
 }
 
 mkdirSync('public', { recursive: true })
-const BANK_VERSION = 7
+const BANK_VERSION = 8
 const payload = { version: BANK_VERSION, bank }
 writeFileSync('public/question-bank-local.json', JSON.stringify(payload), 'utf-8')
 let total = 0
