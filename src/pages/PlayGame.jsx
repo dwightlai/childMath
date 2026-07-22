@@ -21,6 +21,7 @@ export default function PlayGame() {
   const recordAnswer = useAbilityStore((s) => s.recordAnswer)
 
   const [questions, setQuestions] = useState(null)
+  const [questionSource, setQuestionSource] = useState('local')
   const [loading, setLoading] = useState(() => aiEnabled && !INTERACTIVE_GAMES.has(gameId))
   const [done, setDone] = useState(false)
   const [result, setResult] = useState(null)
@@ -30,9 +31,15 @@ export default function PlayGame() {
     if (!module || !game) return undefined
     if (INTERACTIVE_GAMES.has(gameId)) { setLoading(false); return undefined }
     let cancelled = false
-    loadAiQuestions(moduleId, gameId, FREE_PLAY_COUNT).then((qs) => {
+    loadAiQuestions(moduleId, gameId, FREE_PLAY_COUNT).then((res) => {
       if (!cancelled) {
-        if (qs) setQuestions(qs)
+        if (res?.questions?.length) {
+          setQuestions(res.questions)
+          setQuestionSource(res.source)
+        } else {
+          setQuestions(null)
+          setQuestionSource('local')
+        }
         setLoading(false)
       }
     }).catch(() => {
@@ -56,10 +63,14 @@ export default function PlayGame() {
     setDone(false)
     setResult(null)
     setQuestions(null)
+    setQuestionSource('local')
     if (aiEnabled && !INTERACTIVE_GAMES.has(gameId)) {
       setLoading(true)
-      loadAiQuestions(moduleId, gameId, FREE_PLAY_COUNT).then((qs) => {
-        if (qs) setQuestions(qs)
+      loadAiQuestions(moduleId, gameId, FREE_PLAY_COUNT).then((res) => {
+        if (res?.questions?.length) {
+          setQuestions(res.questions)
+          setQuestionSource(res.source)
+        }
         setLoading(false)
       }).catch(() => {
         setLoading(false)
@@ -82,7 +93,8 @@ export default function PlayGame() {
     )
   }
 
-  const isAiSource = (questions?.length || 0) > 0
+  const isAiSource = questionSource === 'ai'
+  const sourceLabel = questionSource === 'ai' ? '🤖 AI 智能出题' : questionSource === 'bank' ? '📦 本地题库' : '📦 本地出题'
 
   // Done screen
   if (done) {
@@ -151,7 +163,7 @@ export default function PlayGame() {
           <span className={`text-xs font-bold px-3 py-1 rounded-full border-2 ${
             isAiSource ? 'bg-grape/10 text-grape-deep border-grape/30' : 'bg-ink/5 text-ink-soft border-ink/10'
           }`}>
-            {isAiSource ? '🤖 AI 智能出题' : '📦 本地出题'}
+            {sourceLabel}
           </span>
           <span className="text-xs font-bold px-3 py-1 rounded-full border-2 bg-sun/10 text-sun-deep border-sun/30 ml-2">
             🎮 试玩模式

@@ -91,6 +91,7 @@ export default function Session() {
   const reflection = useMemo(() => pick(REFLECTIONS), [])
   const [aiQuestions, setAiQuestions] = useState({})
   const [activeQuestions, setActiveQuestions] = useState(null)
+  const [activeSource, setActiveSource] = useState('local')
   const [aiLoading, setAiLoading] = useState(() => useSettingsStore.getState().aiEnabled)
   const [dailyPlan, setDailyPlan] = useState(null)
 
@@ -125,9 +126,9 @@ export default function Session() {
     const cp = phase === 0 ? plan.warmup : phase === 1 ? plan.core : plan.challenge
     let cancelled = false
     if (aiEnabled) setAiLoading(true)
-    loadAiQuestions(cp.moduleId, cp.game.id, SESSION_PHASES[phase].questionCount).then((qs) => {
+    loadAiQuestions(cp.moduleId, cp.game.id, SESSION_PHASES[phase].questionCount).then((res) => {
       if (!cancelled) {
-        if (qs) setAiQuestions((prev) => ({ ...prev, [phase]: qs }))
+        if (res?.questions?.length) setAiQuestions((prev) => ({ ...prev, [phase]: res }))
         setAiLoading(false)
       }
     }).catch(() => {
@@ -169,9 +170,9 @@ export default function Session() {
 
   const beginPhase = () => {
     playClick()
-    // Lock in the AI questions (if any) for this phase so they stay stable
-    // throughout the game even if the cache updates later.
-    setActiveQuestions(aiQuestions[phase] || null)
+    const packed = aiQuestions[phase]
+    setActiveQuestions(packed?.questions || null)
+    setActiveSource(packed?.source || 'local')
     setPhaseStarted(true)
   }
 
@@ -185,6 +186,7 @@ export default function Session() {
     setRecorded(false)
     setAiQuestions({})
     setActiveQuestions(null)
+    setActiveSource('local')
     setAiLoading(false)
   }
 
@@ -293,7 +295,8 @@ export default function Session() {
   }
 
   // ---- Active game ----
-  const isAiSource = (activeQuestions?.length || 0) > 0
+  const isAiSource = activeSource === 'ai'
+  const sourceLabel = activeSource === 'ai' ? '🤖 AI 智能出题' : activeSource === 'bank' ? '📦 本地题库' : '📦 本地出题'
   return (
     <div className="min-h-full px-4 sm:px-6 py-8">
       <div className="max-w-2xl mx-auto">
@@ -323,7 +326,7 @@ export default function Session() {
                 : 'bg-ink/5 text-ink-soft border-ink/10'
             }`}
           >
-            {isAiSource ? '🤖 AI 智能出题' : '📦 本地出题'}
+            {sourceLabel}
           </span>
         </div>
 

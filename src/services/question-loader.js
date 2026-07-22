@@ -158,7 +158,7 @@ export async function loadAiQuestions(moduleId, gameId, count) {
           gameId,
           raw.map(normalizeQuestion).filter((q) => q.question && q.options.length >= 2),
         )
-        if (normalized.length) return normalized
+        if (normalized.length) return { questions: normalized, source: 'ai' }
       }
     } catch (err) {
       console.warn('[question-loader] AI generation failed, falling back:', err?.message || err)
@@ -172,7 +172,7 @@ export async function loadAiQuestions(moduleId, gameId, count) {
       gameId,
       banked.map(normalizeQuestion).filter((q) => q.question && q.options.length >= 2),
     )
-    if (normalized.length) return normalized
+    if (normalized.length) return { questions: normalized, source: 'bank' }
   }
 
   // 3) Signal the caller to use the algorithmic local generators.
