@@ -4,19 +4,45 @@ import { randInt, pick, shuffle, generateUnique } from '../../utils/helpers'
 // ---- 路线探索 (route): count paths on a small grid ----
 // Grid from top-left to bottom-right moving only right/down.
 // Number of paths on an m x n grid = C(m+n, m). We keep grids tiny.
+const binom = (n, k) => {
+  if (k < 0 || k > n) return 0
+  k = Math.min(k, n - k)
+  let r = 1
+  for (let i = 1; i <= k; i++) r = (r * (n - k + i)) / i
+  return Math.round(r)
+}
+const pathCount = (rows, cols) => binom(rows + cols - 2, rows - 1)
+
 const ROUTE_GRIDS = [
-  { rows: 2, cols: 2, paths: 2 },  // 1x1 steps -> C(2,1)=2
-  { rows: 2, cols: 3, paths: 3 },  // C(3,1)=3
-  { rows: 3, cols: 3, paths: 6 },  // C(4,2)=6
-]
+  { rows: 2, cols: 2 },
+  { rows: 2, cols: 3 },
+  { rows: 3, cols: 2 },
+  { rows: 2, cols: 4 },
+  { rows: 4, cols: 2 },
+  { rows: 3, cols: 3 },
+  { rows: 3, cols: 4 },
+  { rows: 4, cols: 3 },
+].map((g) => ({ ...g, paths: pathCount(g.rows, g.cols) }))
+
 const route = (difficulty) => {
-  const g = difficulty === 1 ? pick(ROUTE_GRIDS.slice(0, 2)) : pick(ROUTE_GRIDS)
+  const pool = difficulty === 1
+    ? ROUTE_GRIDS.filter((g) => g.paths <= 4)
+    : difficulty === 2
+      ? ROUTE_GRIDS.filter((g) => g.paths <= 6)
+      : ROUTE_GRIDS
+  const g = pick(pool)
   const options = shuffle([g.paths, g.paths + 1, Math.max(1, g.paths - 1), g.paths + 2]
     .filter((v, i, a) => a.indexOf(v) === i).slice(0, 4)).map((v) => ({ value: v, label: `${v} 条` }))
+  const needR = g.cols - 1
+  const needD = g.rows - 1
   return {
-    question: '只能向右或向下走，从 🏠 到 🏫 一共有几条不同的路线？',
+    question: pick([
+      `只能向右或向下走，从 🏠 到 🏫 一共有几条不同的路线？`,
+      `从家到学校只能向右、向下，一共有几条路？（要走 ${needR} 步右、${needD} 步下）`,
+      `地图有 ${g.rows} 行 ${g.cols} 列，只能向右或向下，从 🏠 到 🏫 有几条路线？`,
+    ]),
     speakText: '从起点到终点一共有几条不同的路线？',
-    hint: '试着用手指把每条路线都走一遍，别重复也别漏掉。',
+    hint: '用手指把每条路线都走一遍，别重复也别漏掉。',
     options,
     isCorrect: (opt) => opt.value === g.paths,
     columns: 4,

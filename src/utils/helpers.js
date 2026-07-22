@@ -50,6 +50,8 @@ export const questionKey = (q) => {
     q.blocks ? JSON.stringify(q.blocks) : '',
     q.seq?.items ? JSON.stringify(q.seq.items) : '',
     q.countItems ? `${q.countItems.count}:${q.countItems.item}` : '',
+    q.routeGrid ? `${q.routeGrid.rows}x${q.routeGrid.cols}` : '',
+    q.clock ? `${q.clock.hour}:${q.clock.minute || 0}` : '',
   ]
   return parts.filter((p) => p !== undefined && p !== '').join('|')
 }

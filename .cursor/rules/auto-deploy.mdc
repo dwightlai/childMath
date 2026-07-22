@@ -1,0 +1,12 @@
+---
+description: 修完问题后自动 commit、push、Vercel 生产部署
+alwaysApply: true
+---
+
+在本仓库修复问题并完成后，自动：
+1. commit 相关改动
+2. push 到 origin
+3. 执行 `npm run deploy` 更新 Vercel 生产
+4. 简短回复提交说明与 https://childmath-livid.vercel.app
+
+仅问答未改代码时不发布。勿提交密钥。若 `git commit` 报 `--trailer`，用 `D:\devtools\Git\bin\git.exe commit`。
