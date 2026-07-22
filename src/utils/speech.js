@@ -1,9 +1,7 @@
-// Text-to-speech using the Web Speech API (Chinese voice when available).
 import { useSettingsStore } from '../stores/useSettingsStore'
 
-export const speak = (text) => {
-  if (!useSettingsStore.getState().speechEnabled) return
-  if (!('speechSynthesis' in window)) return
+const speakRaw = (text) => {
+  if (!text || !('speechSynthesis' in window)) return
   try {
     window.speechSynthesis.cancel()
     const utter = new SpeechSynthesisUtterance(text)
@@ -16,6 +14,13 @@ export const speak = (text) => {
     window.speechSynthesis.speak(utter)
   } catch (e) {}
 }
+
+export const speak = (text) => {
+  if (!useSettingsStore.getState().speechEnabled) return
+  speakRaw(text)
+}
+
+export const speakNow = (text) => speakRaw(text)
 
 export const stopSpeak = () => {
   if ('speechSynthesis' in window) {

@@ -2,10 +2,11 @@ import { useState, useCallback, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import StarBurst from './StarBurst'
 import { playCorrect, playWrong, playStar } from '../utils/audio'
-import { speak, stopSpeak } from '../utils/speech'
+import { speak, speakNow, stopSpeak } from '../utils/speech'
 import { useSettingsStore } from '../stores/useSettingsStore'
 import { PRAISE, ENCOURAGE } from '../data/config'
 import { pick } from '../utils/helpers'
+import { playClick } from '../utils/audio'
 
 export default function QuestionShell({
   question,
@@ -92,7 +93,21 @@ export default function QuestionShell({
       )}
 
       <div className="card-sticker p-4 sm:p-5">
-        <p className="font-display text-xl sm:text-2xl leading-relaxed text-ink">{question}</p>
+        <div className="flex items-start gap-3">
+          <p className="font-display text-xl sm:text-2xl leading-relaxed text-ink flex-1 min-w-0">{question}</p>
+          <button
+            type="button"
+            aria-label="读题"
+            onClick={() => {
+              playClick()
+              speakNow(speakText || question)
+            }}
+            className="shrink-0 btn-chunky bg-sky/20 text-sky-deep px-3 py-2 text-lg leading-none"
+            title="读题"
+          >
+            🔊
+          </button>
+        </div>
       </div>
 
       <AnimatePresence>
