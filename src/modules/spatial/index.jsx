@@ -43,7 +43,7 @@ function CountFigureVisual({ countFigure }) {
   const id = countFigure.id
   return (
     <div className="flex justify-center bg-white rounded-2xl border-2 border-ink/10 p-4">
-      <svg width="140" height="140" viewBox="0 0 100 100">
+      <svg width="160" height="160" viewBox="0 0 100 100">
         {id === 'sq-diag' && (
           <>
             <rect x="10" y="10" width="80" height="80" fill="#FFE8A3" stroke="#3D405B" strokeWidth="3" />
@@ -67,6 +67,49 @@ function CountFigureVisual({ countFigure }) {
           <>
             <rect x="10" y="25" width="80" height="50" fill="#FFE8A3" stroke="#3D405B" strokeWidth="3" />
             <line x1="50" y1="25" x2="50" y2="75" stroke="#3D405B" strokeWidth="3" />
+          </>
+        )}
+        {id === 'tri-3' && (
+          <>
+            <polygon points="50,8 10,90 90,90" fill="#CDEAC0" stroke="#3D405B" strokeWidth="3" />
+            <line x1="50" y1="8" x2="30" y2="90" stroke="#3D405B" strokeWidth="3" />
+            <line x1="50" y1="8" x2="70" y2="90" stroke="#3D405B" strokeWidth="3" />
+          </>
+        )}
+        {id === 'sq-4' && (
+          <>
+            <rect x="10" y="10" width="80" height="80" fill="#FFE8A3" stroke="#3D405B" strokeWidth="3" />
+            <line x1="50" y1="10" x2="50" y2="90" stroke="#3D405B" strokeWidth="3" />
+            <line x1="10" y1="50" x2="90" y2="50" stroke="#3D405B" strokeWidth="3" />
+          </>
+        )}
+        {id === 'house-tri' && (
+          <>
+            <polygon points="50,8 12,42 88,42" fill="#FFADAD" stroke="#3D405B" strokeWidth="3" />
+            <polygon points="18,42 82,42 18,90" fill="#BDE0FE" stroke="#3D405B" strokeWidth="3" />
+            <polygon points="82,42 82,90 18,90" fill="#CDEAC0" stroke="#3D405B" strokeWidth="3" />
+          </>
+        )}
+        {id === 'star-ish' && (
+          <>
+            {[0, 60, 120, 180, 240, 300].map((deg) => {
+              const rad = (d) => ((d - 90) * Math.PI) / 180
+              const ox = 50 + Math.cos(rad(deg)) * 38
+              const oy = 50 + Math.sin(rad(deg)) * 38
+              const lx = 50 + Math.cos(rad(deg - 28)) * 16
+              const ly = 50 + Math.sin(rad(deg - 28)) * 16
+              const rx = 50 + Math.cos(rad(deg + 28)) * 16
+              const ry = 50 + Math.sin(rad(deg + 28)) * 16
+              return (
+                <polygon
+                  key={deg}
+                  points={`${ox},${oy} ${lx},${ly} ${rx},${ry}`}
+                  fill={deg % 120 === 0 ? '#FFE8A3' : '#CDEAC0'}
+                  stroke="#3D405B"
+                  strokeWidth="2"
+                />
+              )
+            })}
           </>
         )}
       </svg>
