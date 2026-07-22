@@ -129,7 +129,7 @@ const compare = (difficulty) => {
     question = pick([
       `比一比：${left}  ○  ${right}，○ 里填什么？`,
       `${left} 和 ${right}，用 ＞ ＜ ＝ 怎么连？`,
-      `数线上 ${left} 在 ${right} 的哪边？选对的符号：${left} ○ ${right}`,
+      `${left} ○ ${right}，○ 里应该填 ＞、＜ 还是 ＝？`,
     ])
     speak = `${left}和${right}比，哪个大？`
   }

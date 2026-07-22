@@ -37,13 +37,16 @@ const storyTheater = (difficulty) => {
     hint = '先减再用加，一步一步来。'
   } else {
     const a = randInt(3, max), b = randInt(1, 6)
-    const name2 = pick(NAMES)
+    const name1 = pick(NAMES)
+    let name2 = pick(NAMES)
+    while (name2 === name1) name2 = pick(NAMES)
     question = pick([
-      `${pick(NAMES)}有 ${a} 个${t.name}，${name2}比他多 ${b} 个，${name2}有几个？`,
-      `${name2}的${t.name}比 ${a} 个多 ${b} 个，${name2}有几个？`,
+      `${name1}有 ${a} 个${t.name}，${name2}比${name1}多 ${b} 个，${name2}有几个？`,
+      `${name1}有 ${a} 个${t.name}，又买了 ${b} 个，现在一共几个？`,
+      `盒子里有 ${a} 个${t.name}，又放进 ${b} 个，现在几个？`,
     ])
     answer = `${a} + ${b} = ${a + b}`
-    hint = '"比他多"就是再加。'
+    hint = '"比他多"或"又买了"，都是再加。'
   }
   const nums = (question.match(/\d+/g) || ['1', '1']).map(Number)
   const [x, y] = [nums[0], nums[1] || 1]
@@ -105,7 +108,7 @@ const arrange = (difficulty) => {
   }
   const question = pick([
     `第一行摆 ${a} 个${t.name}，第二行摆 ${b} 个。哪句话是对的？`,
-    `上看 ${a} 个，下看 ${b} 个，选正确的说法。`,
+    `上面有 ${a} 个，下面有 ${b} 个，选正确的说法。`,
   ])
   return {
     question,
@@ -131,12 +134,12 @@ const moreLess = (difficulty) => {
   const mode = pick(['diff', 'who', 'need'])
   if (mode === 'who') {
     return {
-      question: `A 排有 ${a} 个${t.name}，B 排有 ${b} 个，哪排更多？`,
-      speakText: '哪排更多？',
+      question: `第一排有 ${a} 个${t.name}，第二排有 ${b} 个，哪一排更多？`,
+      speakText: '哪一排更多？',
       hint: '比一比两个数。',
       options: shuffle([
-        { value: 'A', label: 'A 排多', correct: a > b },
-        { value: 'B', label: 'B 排多', correct: b > a },
+        { value: 'A', label: '第一排多', correct: a > b },
+        { value: 'B', label: '第二排多', correct: b > a },
         { value: 'eq', label: '一样多', correct: false },
       ]),
       isCorrect: (opt) => opt.correct,
@@ -147,7 +150,7 @@ const moreLess = (difficulty) => {
   if (mode === 'need') {
     const low = Math.min(a, b), high = Math.max(a, b)
     return {
-      question: `少的一排要再摆几个，才能和多的一样多？`,
+      question: `上面一排有 ${a} 个，下面一排有 ${b} 个。少的一排还要再摆几个，才能和多的一样多？`,
       speakText: '还要摆几个才一样多？',
       hint: `${high} 减 ${low}。`,
       options: shuffle([diff, diff + 1, Math.max(1, diff - 1), low]).slice(0, 4).map((v) => ({ value: v, label: `${v} 个` })),
@@ -172,33 +175,49 @@ const moreLess = (difficulty) => {
 
 const detective = (difficulty) => {
   const t = pick(THINGS)
-  const a = randInt(3, 10)
-  const b = randInt(2, 8)
+  const a = randInt(3, difficulty === 1 ? 10 : 20)
+  const b = randInt(2, Math.min(8, a - 1))
+  const mode = pick(['total', 'remain', 'any'])
   const irrelevant = pick([
     '今天天气很好', `${pick(NAMES)}穿了红色的衣服`, '他们住在三楼', '现在是星期六', '喜欢唱歌',
   ])
-  const useful = pick([
-    `他有 ${a} 个，又得到 ${b} 个`,
-    `原来 ${a} 个，用掉 ${b} 个`,
-    `左边 ${a} 个，右边 ${b} 个`,
-    `一共 ${a + b} 个，拿走 ${b} 个`,
-  ])
-  const ask = pick([
-    `想知道"${pick(NAMES)}一共有多少${t.name}"，哪个条件有用？`,
-    `算还剩几个${t.name}，需要哪些信息？`,
-    `下面哪句话能帮我们算出答案？`,
-    `侦探时间：哪一句里有能用来计算的数字？`,
-  ])
+  let ask, useful
+  if (mode === 'total') {
+    ask = `想知道"${pick(NAMES)}一共有多少${t.name}"，哪个条件有用？`
+    useful = pick([
+      `他有 ${a} 个，又得到 ${b} 个`,
+      `左边 ${a} 个，右边 ${b} 个`,
+      `原来 ${a} 个，又买了 ${b} 个`,
+    ])
+  } else if (mode === 'remain') {
+    ask = `算还剩几个${t.name}，需要哪句话？`
+    useful = pick([
+      `原来 ${a} 个，用掉 ${b} 个`,
+      `一共 ${a} 个，拿走 ${b} 个`,
+      `他有 ${a} 个，送给朋友 ${b} 个`,
+    ])
+  } else {
+    ask = pick([
+      `下面哪句话能帮我们算出答案？`,
+      `侦探时间：哪一句里有能用来计算的数字？`,
+    ])
+    useful = pick([
+      `他有 ${a} 个，又得到 ${b} 个`,
+      `原来 ${a} 个，用掉 ${b} 个`,
+      `左边 ${a} 个，右边 ${b} 个`,
+      `一共 ${a} 个，拿走 ${b} 个`,
+    ])
+  }
   return {
     question: ask,
     speakText: ask,
-    hint: '有用的条件里要有数字。',
+    hint: '有用的条件里要有数字，还要能对上问题。',
     options: shuffle([
       { value: 'useful', label: useful, correct: true },
       { value: 'useless1', label: irrelevant, correct: false },
       { value: 'useless2', label: `${pick(NAMES)}喜欢${t.name}`, correct: false },
       { value: 'useless3', label: difficulty >= 2 ? `书包是蓝色的` : `今天星期一`, correct: false },
-    ]).slice(0, 3),
+    ]).slice(0, 4),
     isCorrect: (opt) => opt.correct,
     columns: 1,
   }
@@ -215,8 +234,8 @@ const multiSolve = (difficulty) => {
     correctLabel = `${b} + ${a} = ${total}`
     speak = '减法和加法可以互相反过来想'
   } else if (mode === 'same') {
-    question = `怎样算也能得到 ${total}？`
-    correctLabel = `${a} + ${b} = ${total}`
+    question = `${a} + ${b} = ${total}，怎样算也能得到 ${total}？`
+    correctLabel = `${b} + ${a} = ${total}`
     speak = `怎样算等于${total}`
   } else {
     question = pick([

@@ -54,16 +54,17 @@ const GAME_DESCS = {
 }
 
 /**
- * Convert a raw AI question object into the shape GameBase/ChoiceGrid expect.
+ * Convert a raw AI/bank question object into the shape GameBase/ChoiceGrid expect.
+ * Preserves visual payloads used by module renderers.
  */
 export function normalizeQuestion(aiQ) {
   const options = (aiQ.options || []).map((o) =>
     typeof o === 'object' && o !== null
-      ? { value: o.value, label: o.label ?? String(o.value) }
+      ? { value: o.value, label: o.label ?? String(o.value), ...o }
       : { value: o, label: String(o) },
   )
   const n = options.length
-  return {
+  const q = {
     question: aiQ.question || '',
     speakText: aiQ.speakText || aiQ.question || '',
     hint: aiQ.hint || '',
@@ -72,6 +73,42 @@ export function normalizeQuestion(aiQ) {
     isCorrect: (opt) => String(opt.value) === String(aiQ.answer),
     columns: n <= 3 ? 3 : n === 4 ? 4 : 2,
   }
+  for (const key of [
+    'chart', 'items', 'rows', 'survey', 'countItems', 'visual', 'seq',
+    'rotate', 'countFigure', 'symmetry', 'blocks', 'tangram',
+    'logic', 'routeGrid', 'method', 'story', 'clock',
+  ]) {
+    if (aiQ[key] != null) q[key] = aiQ[key]
+  }
+  return q
+}
+
+/** Games that must have a visual payload; text-only bank/AI questions fall back to local generators. */
+const VISUAL_REQUIRED = {
+  'read-chart': 'chart',
+  'count-sort': 'items',
+  'compare-data': 'rows',
+  'simple-survey': 'survey',
+  'quick-count': 'countItems',
+  'estimate': 'countItems',
+  arrange: 'rows',
+  'more-less': 'rows',
+  sequence: 'seq',
+  designer: 'seq',
+  'shape-pattern': 'seq',
+  judge: 'seq',
+  rotate: 'rotate',
+  'count-shapes': 'countFigure',
+  symmetry: 'symmetry',
+  'block-count': 'blocks',
+  tangram: 'tangram',
+  route: 'routeGrid',
+}
+
+function keepUsable(gameId, questions) {
+  const key = VISUAL_REQUIRED[gameId]
+  if (!key) return questions
+  return questions.filter((q) => q[key] != null)
 }
 
 /**
@@ -117,9 +154,10 @@ export async function loadAiQuestions(moduleId, gameId, count) {
       )
       if (raw) {
         useQuestionBankStore.getState().addQuestions(moduleId, gameId, raw, level)
-        const normalized = raw
-          .map(normalizeQuestion)
-          .filter((q) => q.question && q.options.length >= 2)
+        const normalized = keepUsable(
+          gameId,
+          raw.map(normalizeQuestion).filter((q) => q.question && q.options.length >= 2),
+        )
         if (normalized.length) return normalized
       }
     } catch (err) {
@@ -130,9 +168,10 @@ export async function loadAiQuestions(moduleId, gameId, count) {
   // 2) Fall back to bank at the manual difficulty setting.
   const banked = useQuestionBankStore.getState().getQuestions(moduleId, gameId, count, level)
   if (banked.length) {
-    const normalized = banked
-      .map(normalizeQuestion)
-      .filter((q) => q.question && q.options.length >= 2)
+    const normalized = keepUsable(
+      gameId,
+      banked.map(normalizeQuestion).filter((q) => q.question && q.options.length >= 2),
+    )
     if (normalized.length) return normalized
   }
 

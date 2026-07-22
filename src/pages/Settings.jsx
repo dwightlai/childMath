@@ -119,14 +119,14 @@ function ImportBankButton() {
   const [status, setStatus] = useState(null)
   const [loading, setLoading] = useState(false)
 
-  const doImport = (bankData) => {
+  const doImport = (bankData, version = 0) => {
     if (!bankData || typeof bankData !== 'object' || Array.isArray(bankData)) {
       setStatus({ ok: false, msg: '文件格式不对' })
       setTimeout(() => setStatus(null), 4000)
       return
     }
     try {
-      importBank(bankData)
+      importBank(bankData, version)
       setStatus({ ok: true, msg: '导入成功！' })
     } catch (err) {
       console.error('Import error:', err)
@@ -147,7 +147,7 @@ function ImportBankButton() {
       if (!resp.ok) throw new Error('文件不存在')
       const data = await resp.json()
       const bankData = data.bank || data
-      doImport(bankData)
+      doImport(bankData, data.version || Date.now())
     } catch (err) {
       console.error('Quick load error:', err)
       setStatus({ ok: false, msg: '加载失败：' + (err?.message || '网络错误') })

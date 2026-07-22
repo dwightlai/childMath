@@ -9,6 +9,7 @@ export const useQuestionBankStore = create(
   persist(
     (set, get) => ({
       bank: {},
+      bankVersion: 0,
 
       addQuestions(moduleId, gameId, rawQuestions, difficultyLevel = 1) {
         if (!Array.isArray(rawQuestions) || rawQuestions.length === 0) return
@@ -66,11 +67,16 @@ export const useQuestionBankStore = create(
       },
 
       clearBank() {
-        set({ bank: {} })
+        set({ bank: {}, bankVersion: 0 })
       },
 
-      importBank(importedBank) {
+      importBank(importedBank, version = 0) {
         if (!importedBank || typeof importedBank !== 'object') return
+        const ver = Number(version) || 0
+        if (ver > 0 && ver > (get().bankVersion || 0)) {
+          set({ bank: importedBank, bankVersion: ver })
+          return
+        }
         const current = get().bank
         const merged = { ...current }
         for (const [key, buckets] of Object.entries(importedBank)) {
@@ -86,7 +92,7 @@ export const useQuestionBankStore = create(
             }
           }
         }
-        set({ bank: merged })
+        set({ bank: merged, bankVersion: Math.max(get().bankVersion || 0, ver) })
       },
     }),
     {
@@ -101,7 +107,7 @@ export const useQuestionBankStore = create(
           for (const [key, arr] of Object.entries(bank)) {
             migrated[key] = { 1: arr.slice(0, MAX_PER_BUCKET) }
           }
-          return { ...persisted, bank: migrated }
+          return { ...persisted, bank: migrated, bankVersion: persisted.bankVersion || 0 }
         }
         return persisted
       },

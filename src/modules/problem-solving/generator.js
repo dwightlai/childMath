@@ -76,23 +76,23 @@ const LIFE_TEMPLATES = [
     const h = randInt(1, 11)
     return {
       text: pick([
-        `钟面上时针指向 ${h}，分针指向 12，现在是几点？`,
-        `短针指着 ${h}，长针指着 12，是 ${h} 点整吗？选正确算式含义：现在是几点整？`,
+        '看钟面：现在是几点？',
+        '钟面上指针像图中这样，现在几点整？',
       ]),
       answer: `${h} 点`,
-      hint: '分针指 12 就是整点。',
+      hint: '分针（长针）指 12 就是整点，看短针指几。',
       options: shuffle([`${h} 点`, `${h + 1} 点`, `${Math.max(1, h - 1)} 点`, `${h} 点半`]).map((v) => ({ value: v, label: v })),
-      isClock: true,
+      clock: { hour: h, minute: 0 },
     }
   },
   () => {
     const h = randInt(1, 10)
     return {
-      text: `现在是 ${h} 点，再过 1 小时是几点？`,
+      text: '看钟面：现在是这个时刻，再过 1 小时是几点？',
       answer: `${h + 1} 点`,
       hint: '过 1 小时，时针往前走一格。',
       options: shuffle([`${h + 1} 点`, `${h} 点`, `${h + 2} 点`, `${h} 点半`]).map((v) => ({ value: v, label: v })),
-      isClock: true,
+      clock: { hour: h, minute: 0 },
     }
   },
   () => {
@@ -125,7 +125,7 @@ const LIFE_TEMPLATES = [
 ]
 const lifeMath = () => {
   const s = pick(LIFE_TEMPLATES)()
-  if (s.isClock) {
+  if (s.clock || s.isClock) {
     return {
       question: s.text,
       speakText: s.text,
@@ -133,6 +133,7 @@ const lifeMath = () => {
       options: s.options,
       isCorrect: (opt) => opt.value === s.answer,
       columns: 2,
+      clock: s.clock,
     }
   }
   const nums = s.text.match(/\d+/g).map(Number)

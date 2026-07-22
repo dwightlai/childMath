@@ -31,7 +31,7 @@ const splitCalc = (difficulty) => {
   return {
     question: pick([
       `${a} + ${b} 怎么拆分计算是对的？`,
-      `动脑筋：把 ${b} 拆开再加 ${a}，哪个对？`,
+      `把 ${b} 拆开再加 ${a}，哪个算对了？`,
       `巧算 ${a}+${b}，正确的拆分是？`,
     ]),
     speakText: `把 ${b} 拆开来算，哪个是对的？`,

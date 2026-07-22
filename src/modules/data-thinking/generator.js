@@ -44,11 +44,11 @@ const readChart = (difficulty) => {
   const type = pick(['most', 'diff'])
 
   if (type === 'most') {
-    // ensure a unique maximum
     let maxIdx = 0
     values.forEach((v, i) => { if (v > values[maxIdx]) maxIdx = i })
-    const dup = values.some((v, i) => i !== maxIdx && v === values[maxIdx])
-    if (dup) values[maxIdx] = values[maxIdx] + 1
+    values.forEach((v, i) => {
+      if (i !== maxIdx && v >= values[maxIdx]) values[i] = Math.max(1, values[maxIdx] - 1)
+    })
     const winner = names[maxIdx]
     const options = shuffle(names.map((nm) => ({ value: nm, label: nm, correct: nm === winner })))
     return {

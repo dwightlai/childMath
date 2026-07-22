@@ -24,12 +24,16 @@ function waitHydration(store) {
 }
 
 async function seedQuestionBankIfEmpty() {
-  if (useQuestionBankStore.getState().totalCount() > 0) return
   try {
     const resp = await fetch('/question-bank-local.json')
     if (!resp.ok) return
     const data = await resp.json()
-    useQuestionBankStore.getState().importBank(data.bank || data)
+    const bank = data.bank || data
+    const version = data.version || 0
+    const store = useQuestionBankStore.getState()
+    if (version > (store.bankVersion || 0) || store.totalCount() === 0) {
+      store.importBank(bank, version || 1)
+    }
   } catch {
     /* offline / missing file */
   }

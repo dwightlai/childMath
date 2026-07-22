@@ -25,7 +25,7 @@ const myMethod = () => {
   const p = pick(METHOD_PROBLEMS)
   const options = shuffle(METHOD_OPTIONS.map((m) => ({ ...m, correct: m.value === p.method })))
   return {
-    question: '你是用什么方法想出来的？',
+    question: `这道题：${p.problem} 你主要用了什么方法？`,
     speakText: '你是用什么方法想出来的？',
     hint: p.why,
     options,

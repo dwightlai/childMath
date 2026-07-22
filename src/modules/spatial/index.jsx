@@ -5,14 +5,27 @@ import { generate } from './generator'
 import MazeGame from './MazeGame'
 
 // ---- Rotate visual: shows original shape ----
-function RotateVisual({ shape }) {
+function ShapeSvg({ shape, size = 90, fill = '#FF6B6B', stroke = '#EE5253' }) {
+  const id = shape?.id
+  return (
+    <svg width={size} height={size} viewBox="0 0 60 60">
+      {id === 'circle' && <circle cx="30" cy="30" r="22" fill={fill} stroke={stroke} strokeWidth="2.5" />}
+      {id === 'square' && <rect x="12" y="12" width="36" height="36" rx="2" fill={fill} stroke={stroke} strokeWidth="2.5" />}
+      {shape?.d && id !== 'circle' && id !== 'square' && (
+        <path d={shape.d} fill={fill} stroke={stroke} strokeWidth="2" />
+      )}
+    </svg>
+  )
+}
+
+function RotateVisual({ shape, angle, mode }) {
   return (
     <div className="flex justify-center bg-white rounded-2xl border-2 border-ink/10 p-4">
-      <div className="flex flex-col items-center gap-1">
-        <svg width="90" height="90" viewBox="0 0 60 60">
-          <path d={shape.d} fill="#FF6B6B" stroke="#EE5253" strokeWidth="2" />
-        </svg>
-        <span className="text-ink-soft text-sm">原图</span>
+      <div className="flex flex-col items-center gap-2">
+        <ShapeSvg shape={shape} />
+        <span className="text-ink-soft text-sm">
+          {mode === 'same' ? `顺时针转 ${angle}°` : '原图'}
+        </span>
       </div>
     </div>
   )
@@ -163,7 +176,7 @@ export default function SpatialGame({ moduleId, gameId, difficulty, questionCoun
         isCorrect={q.isCorrect}
         columns={q.columns || 2}
         renderOption={
-          q.rotate
+          q.rotate && q.options.some((o) => o.rotate != null)
             ? (opt, picked) => renderRotateOption({ ...opt, d: q.rotate.shape.d }, picked)
             : q.tangram
             ? renderTangramOption
